@@ -194,6 +194,15 @@ export class Overlay {
     this.surface.setAttribute("width", String(fullWidth));
     this.surface.setAttribute("height", String(fullHeight));
 
+    // Detector renders against the *real* DOM in viewport coordinates,
+    // so it bypasses the device simulator entirely (the sim is just a
+    // visual viewport preview and would offset the real-element rects
+    // away from the elements they describe).
+    if (this.options.type === "detector") {
+      renderGrid(this.surface, this.options, { width: fullWidth, height: fullHeight });
+      return;
+    }
+
     const sim = computeSimulation(this.options, fullWidth, fullHeight);
 
     // 1. Backdrop letterboxes (drawn first so the grid sits on top)

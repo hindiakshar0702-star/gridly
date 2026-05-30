@@ -81,6 +81,29 @@
         <div class="card"><h3>8. Fibonacci</h3><p>Phi-based subdivisions with spiral.</p></div>
         <div class="card"><h3>9. Diagonal</h3><p>45-degree cross-hatch grid.</p></div>
       </div>
+
+      <section style="margin-top:48px">
+        <h2 style="font-size:18px;margin:0 0 4px">Detector demo &mdash; <code>type: "detector"</code></h2>
+        <p style="margin:0 0 16px;opacity:0.7">
+          Switch <b>Type</b> to <code>detector</code> in the panel. The detector
+          will scan THIS PAGE and overlay all real <code>display: grid</code> /
+          <code>flex</code> containers. Try setting <b>Target</b> to
+          <code>.flex-row</code> or <code>.real-grid</code> to inspect just one.
+        </p>
+
+        <div class="flex-row" style="display:flex;gap:16px;justify-content:space-between;align-items:center;padding:16px;background:#fff;border-radius:8px;border:1px solid #eee">
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">A</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">B</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">C</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">D</div>
+        </div>
+
+        <div class="real-grid" style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:12px;padding:16px;margin-top:16px;background:#fff;border-radius:8px;border:1px solid #eee">
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">side</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">main content area</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">side</div>
+        </div>
+      </section>
     </div>
 
     <script type="module">

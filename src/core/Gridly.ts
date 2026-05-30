@@ -35,7 +35,8 @@ class GridlyClass {
     "fibonacci",
     "diagonal",
     "percentage",
-    "bootstrap"
+    "bootstrap",
+    "detector"
   ];
 
   /** Theme cycle used by Ctrl+D. */
@@ -101,6 +102,35 @@ class GridlyClass {
 
   setDevice(device: DevicePreset): void {
     this.update({ device });
+  }
+
+  /**
+   * Inspect a specific element (or selector) using the grid detector.
+   * Switches to `type: "detector"` and sets `detectorTarget` to the
+   * provided selector(s).
+   *
+   *   Gridly.inspect(".container");
+   *   Gridly.inspect(".hero, .grid-section");
+   */
+  inspect(selector: string): void {
+    this.update({
+      type: "detector",
+      detectorTarget: selector,
+      detectorAutoScan: false
+    });
+  }
+
+  /**
+   * Auto-detect every grid / flex container on the page and overlay
+   * their structure. Equivalent to `Gridly.show({ type: "detector",
+   * detectorAutoScan: true, detectorTarget: "" })`.
+   */
+  inspectAll(): void {
+    this.update({
+      type: "detector",
+      detectorTarget: "",
+      detectorAutoScan: true
+    });
   }
 
   cycleType(direction: 1 | -1 = 1): GridType {
