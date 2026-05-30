@@ -15,11 +15,14 @@ export const DEFAULTS: ResolvedOptions = {
   opacity: 1,
   zIndex: 2147483646,
   showPanel: false,
+  showLauncher: true,
   keyboard: true,
 
   columns: 12,
   gutter: 24,
   margin: 32,
+  marginLeft: 32,
+  marginRight: 32,
   maxWidth: 0,
 
   baseline: 8,
@@ -36,16 +39,43 @@ export const DEFAULTS: ResolvedOptions = {
 
   breakpoints: DEFAULT_BREAKPOINTS,
 
+  device: "responsive",
+
+  showColumnNumbers: false,
+  showGutterNumbers: false,
+  columnLabelPrefix: "gridOverlay_",
+  gutterLabelPrefix: "gutter_",
   showNumbers: false
 };
 
+/**
+ * Merge user-supplied options over the defaults.
+ *
+ * Implements the margin-fallback rule:
+ *   marginLeft  = input.marginLeft  ?? input.margin ?? DEFAULTS.marginLeft
+ *   marginRight = input.marginRight ?? input.margin ?? DEFAULTS.marginRight
+ *
+ * Also propagates the legacy `showNumbers` flag to the new
+ * `showColumnNumbers` flag when the new flag isn't explicitly set.
+ */
 export function mergeOptions(input: GridlyOptions = {}): ResolvedOptions {
+  const margin = input.margin ?? DEFAULTS.margin;
+  const marginLeft = input.marginLeft ?? input.margin ?? DEFAULTS.marginLeft;
+  const marginRight = input.marginRight ?? input.margin ?? DEFAULTS.marginRight;
+
+  const showColumnNumbers =
+    input.showColumnNumbers ?? input.showNumbers ?? DEFAULTS.showColumnNumbers;
+
   return {
     ...DEFAULTS,
     ...input,
     color: input.color ?? null,
     breakpoints: input.breakpoints ?? DEFAULT_BREAKPOINTS,
-    maxWidth: input.maxWidth ?? 0
+    maxWidth: input.maxWidth ?? 0,
+    margin,
+    marginLeft,
+    marginRight,
+    showColumnNumbers
   };
 }
 

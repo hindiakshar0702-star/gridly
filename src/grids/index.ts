@@ -1,5 +1,5 @@
 import type { GridRenderer, GridType, ResolvedOptions } from "../types";
-import { renderColumnGrid, renderContainerGrid } from "./ColumnGrid";
+import { renderColumnGrid, renderContainerGrid, renderBootstrapGrid } from "./ColumnGrid";
 import { renderBaselineGrid } from "./BaselineGrid";
 import { renderSquareGrid } from "./SquareGrid";
 import { renderDotGrid } from "./DotGrid";
@@ -11,6 +11,10 @@ import { renderHexGrid } from "./HexGrid";
 import { renderPolarGrid } from "./PolarGrid";
 import { renderRadialGrid } from "./RadialGrid";
 import { renderResponsiveGrid } from "./ResponsiveGrid";
+import { renderFlexGrid } from "./FlexGrid";
+import { renderFibonacciGrid } from "./FibonacciGrid";
+import { renderDiagonalGrid } from "./DiagonalGrid";
+import { renderPercentageGrid } from "./PercentageGrid";
 
 /**
  * Registry mapping each grid type to its renderer.
@@ -29,11 +33,16 @@ export const RENDERERS: Record<GridType, GridRenderer> = {
   hex:        renderHexGrid,
   polar:      renderPolarGrid,
   radial:     renderRadialGrid,
-  responsive: renderResponsiveGrid
+  responsive: renderResponsiveGrid,
+  flex:       renderFlexGrid,
+  fibonacci:  renderFibonacciGrid,
+  diagonal:   renderDiagonalGrid,
+  percentage: renderPercentageGrid,
+  bootstrap:  renderBootstrapGrid
 };
 
 export function renderGrid(
-  host: SVGSVGElement,
+  host: SVGElement,
   options: ResolvedOptions,
   size: { width: number; height: number }
 ): void {
@@ -44,6 +53,7 @@ export function renderGrid(
 export {
   renderColumnGrid,
   renderContainerGrid,
+  renderBootstrapGrid,
   renderBaselineGrid,
   renderSquareGrid,
   renderDotGrid,
@@ -54,5 +64,9 @@ export {
   renderHexGrid,
   renderPolarGrid,
   renderRadialGrid,
-  renderResponsiveGrid
+  renderResponsiveGrid,
+  renderFlexGrid,
+  renderFibonacciGrid,
+  renderDiagonalGrid,
+  renderPercentageGrid
 };

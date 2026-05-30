@@ -1,6 +1,6 @@
 {
   "name": "gridly",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A complete layout debugging and design inspection toolkit. Toggle 13+ grid types (columns, baseline, dots, golden ratio, isometric, hex, polar, radial, and more) over any website with a keyboard shortcut.",
   "keywords": [
     "grid",
