@@ -25,7 +25,8 @@ export { Launcher, launcher } from "./core/Launcher";
 export { THEMES, applyThemeVars, resolveTheme } from "./core/ThemeManager";
 export {
   DEVICE_SPECS, DEVICE_LIST,
-  computeSimulation, drawDeviceBackdrop, drawDeviceFrame
+  computeSimulation, drawDeviceBackdrop, drawDeviceFrame,
+  installDeviceClip, DEVICE_CLIP_ID
 } from "./core/DeviceSimulator";
 export { injectStyles, getCSS } from "./styles/inject";
 

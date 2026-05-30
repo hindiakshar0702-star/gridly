@@ -30,6 +30,35 @@ export interface SimulationResult {
   spec: DeviceSpec | null;
 }
 
+/** Stable id for the SVG clip-path used to confine grids to the device frame. */
+export const DEVICE_CLIP_ID = "gridly-device-clip";
+
+/**
+ * Append a <defs><clipPath> to the surface that clips a translated
+ * grid group to the simulated viewport rect.
+ *
+ * Without this, grid renderers that intentionally over-draw at the
+ * edges (hex, dots, square, isometric) leak into the dark letterbox
+ * area beside the device frame.
+ *
+ * Returns the clip-path URL string to apply on the grid <g>, or
+ * empty string when sim is inactive.
+ */
+export function installDeviceClip(
+  surface: SVGSVGElement,
+  sim: SimulationResult
+): string {
+  if (!sim.active) return "";
+  const defs = svg("defs");
+  const clip = svg("clipPath", { id: DEVICE_CLIP_ID });
+  clip.appendChild(svg("rect", {
+    x: 0, y: 0, width: sim.width, height: sim.height
+  }));
+  defs.appendChild(clip);
+  surface.appendChild(defs);
+  return `url(#${DEVICE_CLIP_ID})`;
+}
+
 /**
  * Compute the effective rendering rectangle given the current options.
  * If `device` is "responsive", returns full viewport dims with offsetX=0.

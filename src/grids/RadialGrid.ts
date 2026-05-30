@@ -8,7 +8,8 @@ import { svg } from "../utils/createElement";
 export const renderRadialGrid: GridRenderer = (host, options, { width, height }) => {
   const cx = width / 2;
   const cy = height / 2;
-  const maxR = Math.min(width, height) / 2;
+  // Reserve room for outer angle labels (lx/ly are at maxR + 14)
+  const maxR = Math.min(width, height) / 2 - 28;
   const rings = Math.max(2, options.rings);
   const sectors = Math.max(2, options.sectors);
 

@@ -2,12 +2,15 @@ import type { GridRenderer } from "../types";
 import { svg } from "../utils/createElement";
 
 /**
- * Polar grid: concentric rings + angular sectors centered on viewport.
+ * Polar grid: concentric rings + angular sectors centered in the
+ * (possibly device-simulated) viewport.
  */
 export const renderPolarGrid: GridRenderer = (host, options, { width, height }) => {
   const cx = width / 2;
   const cy = height / 2;
-  const maxR = Math.min(width, height) / 2;
+  // Leave a small breathing-room margin so outer ring + tick labels
+  // don't touch viewport / device-frame edges.
+  const maxR = Math.min(width, height) / 2 - 24;
   const rings = Math.max(2, options.rings);
   const sectors = Math.max(2, options.sectors);
 
