@@ -151,6 +151,13 @@ const CSS = `
 }
 .gridly-panel__row--check > label { opacity: 0.9; }
 
+.gridly-panel__check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gridly-panel__check label { opacity: 0.9; cursor: pointer; }
+
 .gridly-panel select,
 .gridly-panel input[type="number"],
 .gridly-panel input[type="text"],

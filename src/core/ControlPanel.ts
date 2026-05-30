@@ -13,39 +13,25 @@ const THEMES: ThemeName[] = [
   "light", "dark", "blueprint", "cyberpunk", "figma", "auto"
 ];
 
+/** Which grid types use which options. Drives row visibility in the panel. */
+const COLUMN_TYPES: GridType[] = ["columns", "responsive", "modular", "container", "bootstrap"];
+
 type ControlMap = Record<string, HTMLInputElement | HTMLSelectElement>;
+type TypedRow = { row: HTMLDivElement | HTMLTableElement; types: GridType[] | "all" };
 
 /**
  * Floating debug panel (toggle with Ctrl+P or via the launcher button).
  *
- * Layout:
- *   ┌────────────────────────────┐
- *   │ Gridly                  ✕  │
- *   ├────────────────────────────┤
- *   │ GRID                       │
- *   │  Type    [columns ▾]       │
- *   │  Theme   [light   ▾]       │
- *   │  Device  [responsive ▾]    │
- *   │ LAYOUT                     │
- *   │  Columns / Gutter          │
- *   │  Margin L / Margin R       │
- *   │  Max width / Baseline      │
- *   │ LABELS                     │
- *   │  ☐ gridOverlay_n           │
- *   │  ☐ gutter_n                │
- *   │ APPEARANCE                 │
- *   │  Opacity / Color           │
- *   │ BREAKPOINTS                │
- *   │  [editable table]          │
- *   └────────────────────────────┘
- *
- * The panel is rebuilt as plain DOM (no React) so it works in any host.
+ * The panel is *type-aware* — it shows only the controls that apply
+ * to the currently-selected grid type (e.g. "Cell size" appears for
+ * `square` / `isometric` / `diagonal`, "Hex radius" for `hex`, etc.).
  */
 export class ControlPanel {
   private root: HTMLDivElement | null = null;
   private inputs: ControlMap = {};
   private breakpointTable: HTMLTableElement | null = null;
   private rebuilding = false;
+  private typedRows: TypedRow[] = [];
 
   mount(): void {
     if (this.root) return;
@@ -80,42 +66,77 @@ export class ControlPanel {
     )));
 
     // LAYOUT section --------------------------------------------------
-    body.appendChild(this.section("Layout"));
-    body.appendChild(this.row("Grid Overlay", this.makeNumber(
+    body.appendChild(this.typedSection("Layout", "all"));
+
+    body.appendChild(this.typedRow(COLUMN_TYPES, "Grid Overlay", this.makeNumber(
       "columns", opts.columns, 1, 24, 1,
       (v) => Gridly.update({ columns: v })
     )));
-    body.appendChild(this.row("Gutter", this.makeNumber(
+    body.appendChild(this.typedRow(COLUMN_TYPES, "Gutter", this.makeNumber(
       "gutter", opts.gutter, 0, 200, 1,
       (v) => Gridly.update({ gutter: v })
     )));
-    body.appendChild(this.row("Margin L", this.makeNumber(
+    body.appendChild(this.typedRow(["modular"], "Rows", this.makeNumber(
+      "rows", opts.rows, 1, 24, 1,
+      (v) => Gridly.update({ rows: v })
+    )));
+    body.appendChild(this.typedRow(COLUMN_TYPES, "Margin L", this.makeNumber(
       "marginLeft", opts.marginLeft, 0, 500, 1,
       (v) => Gridly.update({ marginLeft: v })
     )));
-    body.appendChild(this.row("Margin R", this.makeNumber(
+    body.appendChild(this.typedRow(COLUMN_TYPES, "Margin R", this.makeNumber(
       "marginRight", opts.marginRight, 0, 500, 1,
       (v) => Gridly.update({ marginRight: v })
     )));
-    body.appendChild(this.row("Max width", this.makeNumber(
+    body.appendChild(this.typedRow(COLUMN_TYPES, "Max width", this.makeNumber(
       "maxWidth", opts.maxWidth, 0, 4000, 10,
       (v) => Gridly.update({ maxWidth: v })
     )));
-    body.appendChild(this.row("Baseline", this.makeNumber(
+    body.appendChild(this.typedRow(["baseline"], "Baseline", this.makeNumber(
       "baseline", opts.baseline, 2, 64, 1,
       (v) => Gridly.update({ baseline: v })
     )));
 
+    // CELL section (per-type sizing) ----------------------------------
+    body.appendChild(this.typedSection(
+      "Cell",
+      ["square", "isometric", "diagonal", "dots", "hex", "polar", "radial"]
+    ));
+    body.appendChild(this.typedRow(
+      ["square", "isometric", "diagonal"], "Cell size",
+      this.makeNumber("size", opts.size, 4, 400, 1, (v) => Gridly.update({ size: v }))
+    ));
+    body.appendChild(this.typedRow(
+      ["dots"], "Spacing",
+      this.makeNumber("spacing", opts.spacing, 4, 400, 1, (v) => Gridly.update({ spacing: v }))
+    ));
+    body.appendChild(this.typedRow(
+      ["dots"], "Dot radius",
+      this.makeNumber("dotRadius", opts.dotRadius, 0.5, 20, 0.5, (v) => Gridly.update({ dotRadius: v }))
+    ));
+    body.appendChild(this.typedRow(
+      ["hex"], "Hex radius",
+      this.makeNumber("hexRadius", opts.hexRadius, 6, 400, 1, (v) => Gridly.update({ hexRadius: v }))
+    ));
+    body.appendChild(this.typedRow(
+      ["polar", "radial"], "Rings",
+      this.makeNumber("rings", opts.rings, 1, 24, 1, (v) => Gridly.update({ rings: v }))
+    ));
+    body.appendChild(this.typedRow(
+      ["polar", "radial"], "Sectors",
+      this.makeNumber("sectors", opts.sectors, 2, 48, 1, (v) => Gridly.update({ sectors: v }))
+    ));
+
     // LABELS section --------------------------------------------------
-    body.appendChild(this.section("Labels"));
-    body.appendChild(this.checkboxRow(
+    body.appendChild(this.typedSection("Labels", COLUMN_TYPES));
+    body.appendChild(this.typedRow(COLUMN_TYPES, "", this.checkboxControl(
       "showColumnNumbers", "Show gridOverlay_n", opts.showColumnNumbers,
       (v) => Gridly.update({ showColumnNumbers: v })
-    ));
-    body.appendChild(this.checkboxRow(
+    )));
+    body.appendChild(this.typedRow(COLUMN_TYPES, "", this.checkboxControl(
       "showGutterNumbers", "Show gutter_n", opts.showGutterNumbers,
       (v) => Gridly.update({ showGutterNumbers: v })
-    ));
+    )));
 
     // APPEARANCE section ---------------------------------------------
     body.appendChild(this.section("Appearance"));
@@ -129,24 +150,31 @@ export class ControlPanel {
     )));
 
     // BREAKPOINTS section --------------------------------------------
-    body.appendChild(this.section("Breakpoints"));
+    body.appendChild(this.typedSection("Breakpoints", ["responsive"]));
     this.breakpointTable = this.buildBreakpointTable(opts.breakpoints);
+    this.typedRows.push({ row: this.breakpointTable, types: ["responsive"] });
     body.appendChild(this.breakpointTable);
 
     const addBtn = el("button", { type: "button", class: "gridly-panel__addbp" });
     addBtn.textContent = "+ Add breakpoint";
     addBtn.addEventListener("click", () => this.addBreakpoint());
-    body.appendChild(addBtn);
+    const addBtnRow = el("div");
+    addBtnRow.appendChild(addBtn);
+    this.typedRows.push({ row: addBtnRow, types: ["responsive"] });
+    body.appendChild(addBtnRow);
 
     // Hint / shortcuts ----------------------------------------------
     const hint = el("div", { class: "gridly-panel__hint" });
     hint.innerHTML =
       "<b>Ctrl+G</b> toggle &middot; <b>Ctrl+Shift+G</b> cycle type<br/>" +
-      "<b>Ctrl+D</b> cycle theme &middot; <b>Ctrl+P</b> panel";
+      "<b>Ctrl+D</b> theme &middot; <b>Ctrl+Shift+D</b> device &middot; <b>Ctrl+P</b> panel";
     body.appendChild(hint);
 
     document.body.appendChild(root);
     this.root = root;
+
+    // Apply initial visibility
+    this.updateRowVisibility(opts.type);
   }
 
   unmount(): void {
@@ -156,6 +184,7 @@ export class ControlPanel {
     this.root = null;
     this.inputs = {};
     this.breakpointTable = null;
+    this.typedRows = [];
   }
 
   isMounted(): boolean {
@@ -163,9 +192,8 @@ export class ControlPanel {
   }
 
   /**
-   * Re-syncs all input values from the current Gridly options.
-   * Called after external updates (keyboard cycling, programmatic
-   * updates) so the panel stays in sync.
+   * Re-syncs all input values from the current Gridly options
+   * and toggles row visibility for the active grid type.
    */
   refresh(): void {
     if (!this.root || this.rebuilding) return;
@@ -178,16 +206,33 @@ export class ControlPanel {
       this.setInput("device",          opts.device);
       this.setInput("columns",         String(opts.columns));
       this.setInput("gutter",          String(opts.gutter));
+      this.setInput("rows",            String(opts.rows));
       this.setInput("marginLeft",      String(opts.marginLeft));
       this.setInput("marginRight",     String(opts.marginRight));
       this.setInput("maxWidth",        String(opts.maxWidth));
       this.setInput("baseline",        String(opts.baseline));
+      this.setInput("size",            String(opts.size));
+      this.setInput("spacing",         String(opts.spacing));
+      this.setInput("dotRadius",       String(opts.dotRadius));
+      this.setInput("hexRadius",       String(opts.hexRadius));
+      this.setInput("rings",           String(opts.rings));
+      this.setInput("sectors",         String(opts.sectors));
       this.setInput("opacity",         String(opts.opacity));
       this.setInput("color",           opts.color ?? "");
       this.setCheckbox("showColumnNumbers", opts.showColumnNumbers);
       this.setCheckbox("showGutterNumbers", opts.showGutterNumbers);
+      this.updateRowVisibility(opts.type);
     } finally {
       this.rebuilding = false;
+    }
+  }
+
+  // ─── Visibility ────────────────────────────────────────────────────
+
+  private updateRowVisibility(currentType: GridType): void {
+    for (const { row, types } of this.typedRows) {
+      const visible = types === "all" || types.includes(currentType);
+      (row as HTMLElement).style.display = visible ? "" : "none";
     }
   }
 
@@ -209,37 +254,51 @@ export class ControlPanel {
     return sec;
   }
 
+  private typedSection(text: string, types: GridType[] | "all"): HTMLDivElement {
+    const sec = this.section(text);
+    this.typedRows.push({ row: sec, types });
+    return sec;
+  }
+
   private row(label: string, control: HTMLElement): HTMLDivElement {
     const row = el("div", { class: "gridly-panel__row" });
-    const lbl = el("label");
-    lbl.textContent = label;
-    row.appendChild(lbl);
+    if (label) {
+      const lbl = el("label");
+      lbl.textContent = label;
+      row.appendChild(lbl);
+    }
     row.appendChild(control);
     return row;
   }
 
-  private checkboxRow(
+  private typedRow(types: GridType[] | "all", label: string, control: HTMLElement): HTMLDivElement {
+    const row = this.row(label, control);
+    this.typedRows.push({ row, types });
+    return row;
+  }
+
+  private checkboxControl(
     name: string,
     label: string,
     checked: boolean,
     onChange: (v: boolean) => void
   ): HTMLDivElement {
-    const row = el("div", { class: "gridly-panel__row gridly-panel__row--check" });
+    const wrap = el("div", { class: "gridly-panel__check" });
     const input = el("input", {
       type: "checkbox",
       id: `gridly-${name}`,
       ...(checked ? { checked: "checked" } : {})
-    });
+    }) as HTMLInputElement;
     input.addEventListener("change", () => {
       if (this.rebuilding) return;
-      onChange((input as HTMLInputElement).checked);
+      onChange(input.checked);
     });
     const lbl = el("label", { for: `gridly-${name}` });
     lbl.textContent = label;
-    row.appendChild(input);
-    row.appendChild(lbl);
+    wrap.appendChild(input);
+    wrap.appendChild(lbl);
     this.inputs[name] = input;
-    return row;
+    return wrap;
   }
 
   private makeSelect(
