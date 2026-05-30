@@ -13,19 +13,19 @@
         background: #fafafa;
         color: #18181b;
       }
-      header {
-        padding: 32px 40px 16px;
+      /*
+        Layout values used here are also passed to Gridly.show() below
+        so the overlay aligns perfectly with the actual card grid.
+      */
+      .container {
         max-width: 1200px;
         margin: 0 auto;
+        padding: 32px 40px 80px;
       }
       header h1 { font-size: 28px; margin: 0 0 4px; }
       header p  { margin: 0; opacity: 0.7; }
-      main {
-        padding: 16px 40px 80px;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
       .grid {
+        margin-top: 24px;
         display: grid;
         grid-template-columns: repeat(12, 1fr);
         gap: 24px;
@@ -35,8 +35,8 @@
         background: white;
         border: 1px solid rgba(0,0,0,0.08);
         border-radius: 12px;
-        padding: 24px;
-        min-height: 160px;
+        padding: 20px;
+        min-height: 140px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.04);
       }
       .card h3 { margin: 0 0 8px; font-size: 16px; }
@@ -50,23 +50,26 @@
         font-family: ui-monospace, Menlo, Consolas, monospace;
         font-size: 11px;
       }
+      code { font-family: ui-monospace, Menlo, Consolas, monospace; }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Gridly demo</h1>
-      <p>
-        Click the floating <b>Gridly</b> button (bottom-left) to open the panel,
-        or press <kbd>Ctrl</kbd>+<kbd>G</kbd> to toggle the grid.
-      </p>
-      <p style="margin-top:6px">
-        Inside the panel you can switch between 18 grid types, themes,
-        device simulators (mobile/tablet/laptop/desktop), tweak margins,
-        gutters, breakpoints, and toggle <code>gridOverlay_n</code> /
-        <code>gutter_n</code> labels.
-      </p>
-    </header>
-    <main>
+    <div class="container">
+      <header>
+        <h1>Gridly demo</h1>
+        <p>
+          Click the floating <b>Gridly</b> button (bottom-left) or press
+          <kbd>Ctrl</kbd>+<kbd>G</kbd> to toggle the grid overlay.
+        </p>
+        <p style="margin-top:6px">
+          The overlay below is configured to <b>match this page exactly</b>
+          (12 columns &middot; 24px gutter &middot; 40px outer padding &middot;
+          1200px max-width). Toggle <code>Show gridOverlay_n</code> and
+          <code>Show gutter_n</code> in the panel to see column &amp; gutter
+          numbering line up with the cards.
+        </p>
+      </header>
+
       <div class="grid">
         <div class="card"><h3>1. Columns</h3><p>Classic 12-column grid with 24px gutters.</p></div>
         <div class="card"><h3>2. Baseline</h3><p>Vertical rhythm based on an 8px baseline.</p></div>
@@ -78,18 +81,25 @@
         <div class="card"><h3>8. Fibonacci</h3><p>Phi-based subdivisions with spiral.</p></div>
         <div class="card"><h3>9. Diagonal</h3><p>45-degree cross-hatch grid.</p></div>
       </div>
-    </main>
+    </div>
 
-    <!--
-      In a real project you would run `npm install gridly` and import.
-      This demo loads the built ESM bundle directly.
-    -->
     <script type="module">
-      import "../../dist/index.js";
-      // The launcher button auto-mounts. Just open it!
-      // Or jump-start with a specific grid:
-      // import { Gridly } from "../../dist/index.js";
-      // Gridly.show({ type: "columns", columns: 12, theme: "blueprint" });
+      import { Gridly } from "../../dist/index.js";
+
+      // Auto-show the grid configured to match the .container layout.
+      // The overlay's columns will line up with the actual cards.
+      Gridly.show({
+        type: "columns",
+        columns: 12,
+        gutter: 24,
+        marginLeft: 40,
+        marginRight: 40,
+        maxWidth: 1200,
+        theme: "light",
+        showColumnNumbers: true,
+        showGutterNumbers: true,
+        showPanel: false   // click the launcher to open
+      });
     </script>
   </body>
 </html>

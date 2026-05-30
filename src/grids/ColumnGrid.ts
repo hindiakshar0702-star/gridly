@@ -3,7 +3,16 @@ import { svg } from "../utils/createElement";
 
 /**
  * Column grid: classic N-column overlay with gutters.
- * Honors maxWidth + asymmetric marginLeft/marginRight.
+ *
+ * Positioning (matches the standard CSS container pattern):
+ *   - `marginLeft` and `marginRight` = minimum page padding
+ *   - `maxWidth` (when > 0) = cap; content centers in the extra space
+ *   - When `maxWidth = 0`, content is fluid edge-to-edge minus margins
+ *
+ * Examples (viewport 1920):
+ *   ml=40,  mr=40,  maxWidth=0     →  startX=40,   width=1840
+ *   ml=40,  mr=40,  maxWidth=1200  →  startX=360,  width=1200  (centered)
+ *   ml=240, mr=40,  maxWidth=0     →  startX=240,  width=1640  (sidebar)
  */
 export const renderColumnGrid: GridRenderer = (host, options, size) => {
   drawColumns(host, options, size, options.columns);
@@ -13,24 +22,23 @@ export const renderColumnGrid: GridRenderer = (host, options, size) => {
  * Container grid: max-width visualization with margins.
  */
 export const renderContainerGrid: GridRenderer = (host, options, size) => {
-  const { maxWidth, marginLeft, marginRight } = options;
-  const usableWidth = size.width - marginLeft - marginRight;
-  const contentWidth = maxWidth > 0
-    ? Math.min(maxWidth, usableWidth)
-    : usableWidth;
-
-  const startX = marginLeft + (usableWidth - contentWidth) / 2;
+  const { startX, contentWidth } = computeBox(options, size.width);
 
   // Outer margins (subtle fill)
-  host.appendChild(svg("rect", {
-    x: 0, y: 0, width: startX, height: size.height,
-    class: "gridly-fill"
-  }));
-  host.appendChild(svg("rect", {
-    x: startX + contentWidth, y: 0,
-    width: size.width - (startX + contentWidth), height: size.height,
-    class: "gridly-fill"
-  }));
+  if (startX > 0) {
+    host.appendChild(svg("rect", {
+      x: 0, y: 0, width: startX, height: size.height,
+      class: "gridly-fill"
+    }));
+  }
+  const rightStart = startX + contentWidth;
+  if (rightStart < size.width) {
+    host.appendChild(svg("rect", {
+      x: rightStart, y: 0,
+      width: size.width - rightStart, height: size.height,
+      class: "gridly-fill"
+    }));
+  }
 
   // Content boundary
   host.appendChild(svg("rect", {
@@ -38,17 +46,17 @@ export const renderContainerGrid: GridRenderer = (host, options, size) => {
     fill: "none", class: "gridly-line--accent"
   }));
 
-  // Center line
+  // Center line of the *content area* (not the viewport)
   host.appendChild(svg("line", {
-    x1: size.width / 2, y1: 0,
-    x2: size.width / 2, y2: size.height,
+    x1: startX + contentWidth / 2, y1: 0,
+    x2: startX + contentWidth / 2, y2: size.height,
     class: "gridly-line"
   }));
 
   if (options.showColumnNumbers) {
     host.appendChild(svg("text", {
       x: startX + 6, y: 16, class: "gridly-label"
-    }, [`maxWidth_${contentWidth.toFixed(0)}px`]));
+    }, [`width=${contentWidth.toFixed(0)}px  ml=${options.marginLeft}  mr=${options.marginRight}`]));
   }
 };
 
@@ -75,19 +83,23 @@ export const renderBootstrapGrid: GridRenderer = (host, options, size) => {
     ? Math.min(active.container, size.width - 24)
     : size.width - 24; // fluid
 
+  const sideMargin = (size.width - contentWidth) / 2;
+
+  // Bootstrap explicitly centers, so we override marginLeft/Right here
+  // for this grid type only.
   const customized: ResolvedOptions = {
     ...options,
     columns: 12,
     gutter: 24,
-    marginLeft: (size.width - contentWidth) / 2,
-    marginRight: (size.width - contentWidth) / 2,
+    marginLeft: sideMargin,
+    marginRight: sideMargin,
     maxWidth: contentWidth
   };
   drawColumns(host, customized, size, 12);
 
   // Breakpoint badge
   host.appendChild(svg("rect", {
-    x: 12, y: 12, width: 160, height: 22, rx: 4,
+    x: 12, y: 12, width: 200, height: 22, rx: 4,
     class: "gridly-fill--bold"
   }));
   host.appendChild(svg("text", {
@@ -95,6 +107,40 @@ export const renderBootstrapGrid: GridRenderer = (host, options, size) => {
     style: "fill:#fff;font-weight:600"
   }, [`bootstrap \u00b7 ${active.name} \u00b7 ${contentWidth.toFixed(0)}px`]));
 };
+
+/**
+ * Compute the content box (startX, width) using the strict
+ * marginLeft / marginRight / maxWidth rule.
+ *
+ * Semantics (matches CSS `max-width: X; margin: 0 auto; padding: 0 ml/mr`):
+ *
+ *   1. `marginLeft` and `marginRight` act as *minimum* page padding.
+ *   2. `maxWidth` (when > 0) caps the content width.
+ *   3. When the viewport is wider than `maxWidth + marginLeft + marginRight`,
+ *      the content is *centered* (extra space split equally on both sides).
+ *   4. When `maxWidth = 0`, content is fluid and `marginLeft` is a strict
+ *      left offset (useful for sidebars / asymmetric layouts).
+ *
+ * Examples (viewport 1920):
+ *   ml=40,  mr=40,  maxWidth=0     →  startX=40,   width=1840
+ *   ml=40,  mr=40,  maxWidth=1200  →  startX=360,  width=1200  (centered)
+ *   ml=240, mr=40,  maxWidth=0     →  startX=240,  width=1640  (sidebar)
+ *
+ * Exported for reuse by ModularGrid and ResponsiveGrid.
+ */
+export function computeBox(
+  options: ResolvedOptions,
+  viewportWidth: number
+): { startX: number; contentWidth: number } {
+  const { marginLeft, marginRight, maxWidth } = options;
+  const fluidWidth = Math.max(0, viewportWidth - marginLeft - marginRight);
+  const constrained = maxWidth > 0 && maxWidth < fluidWidth;
+  const contentWidth = constrained ? maxWidth : fluidWidth;
+  const startX = constrained
+    ? marginLeft + (fluidWidth - contentWidth) / 2
+    : marginLeft;
+  return { startX, contentWidth };
+}
 
 /**
  * Shared helper used by columns / responsive / bootstrap.
@@ -111,19 +157,14 @@ export function drawColumns(
   columnCount: number
 ): void {
   const {
-    gutter, marginLeft, marginRight, maxWidth,
+    gutter,
     showColumnNumbers, showGutterNumbers,
     columnLabelPrefix, gutterLabelPrefix
   } = options;
 
-  const usableWidth = size.width - marginLeft - marginRight;
-  const contentWidth = maxWidth > 0
-    ? Math.min(maxWidth, usableWidth)
-    : usableWidth;
-
-  const totalGutters = gutter * (columnCount - 1);
+  const { startX, contentWidth } = computeBox(options, size.width);
+  const totalGutters = gutter * Math.max(0, columnCount - 1);
   const columnWidth = (contentWidth - totalGutters) / columnCount;
-  const startX = marginLeft + (usableWidth - contentWidth) / 2;
 
   // --- Margin fills (left + right) ------------------------------------
   if (startX > 0) {

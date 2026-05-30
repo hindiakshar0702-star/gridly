@@ -40,13 +40,10 @@ export class Overlay {
     this.root.style.zIndex = String(this.options.zIndex);
     this.root.style.opacity = String(this.options.opacity);
 
-    if (this.options.color) {
-      this.root.style.setProperty("--gridly-ink", this.options.color);
-      this.root.style.setProperty("--gridly-ink-bold", this.options.color);
-      this.root.style.setProperty("--gridly-accent", this.options.color);
-    }
-
+    // Apply theme palette first, then optionally override with custom color
+    // (otherwise applyThemeVars wipes the picker color).
     applyThemeVars(this.root, this.options.theme);
+    this.applyCustomColor();
 
     this.surface = svg("svg", {
       class: "gridly-surface",
@@ -103,12 +100,10 @@ export class Overlay {
     this.root.style.zIndex = String(this.options.zIndex);
     this.root.style.opacity = String(this.options.opacity);
 
-    if (this.options.color) {
-      this.root.style.setProperty("--gridly-ink", this.options.color);
-      this.root.style.setProperty("--gridly-ink-bold", this.options.color);
-      this.root.style.setProperty("--gridly-accent", this.options.color);
-    }
+    // Apply theme palette first, then optionally override with custom color
+    // so the color picker actually wins over the theme.
     applyThemeVars(this.root, this.options.theme);
+    this.applyCustomColor();
     this.draw();
     this.syncPanel();
     this.syncLauncher();
@@ -117,6 +112,19 @@ export class Overlay {
 
   getOptions(): ResolvedOptions {
     return { ...this.options };
+  }
+
+  private applyCustomColor(): void {
+    if (!this.root) return;
+    if (this.options.color) {
+      this.root.style.setProperty("--gridly-ink", this.options.color);
+      this.root.style.setProperty("--gridly-ink-bold", this.options.color);
+      this.root.style.setProperty("--gridly-accent", this.options.color);
+    } else {
+      this.root.style.removeProperty("--gridly-ink");
+      this.root.style.removeProperty("--gridly-ink-bold");
+      this.root.style.removeProperty("--gridly-accent");
+    }
   }
 
   private syncPanel(): void {
