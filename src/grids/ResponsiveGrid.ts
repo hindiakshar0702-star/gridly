@@ -21,9 +21,9 @@ export const renderResponsiveGrid: GridRenderer = (host, options, size) => {
 
   drawColumns(host, merged, size, bp.columns);
 
-  // Breakpoint label badge
+  // Breakpoint label badge (sized to fit "ultra · 16 cols · 1920px" comfortably)
   host.appendChild(svg("rect", {
-    x: 12, y: 12, width: 150, height: 22, rx: 4,
+    x: 12, y: 12, width: 210, height: 22, rx: 4,
     class: "gridly-fill--bold"
   }));
   host.appendChild(svg("text", {

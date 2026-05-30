@@ -18,6 +18,10 @@ const CSS = `
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.gridly-overlay--scoped {
+  position: absolute;
+}
+
 .gridly-overlay .gridly-surface {
   width: 100%;
   height: 100%;
@@ -183,6 +187,16 @@ const CSS = `
 }
 .gridly-panel select { width: 130px; }
 .gridly-panel input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; }
+
+/*
+ * Force a readable color on the native dropdown popup.
+ * Without this, options inherit color from the dark <select>
+ * (white) and become invisible on the white popup background.
+ */
+.gridly-panel select option {
+  color: #18181b;
+  background: #ffffff;
+}
 
 .gridly-panel button {
   background: rgba(255, 255, 255, 0.10);

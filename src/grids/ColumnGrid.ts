@@ -99,7 +99,7 @@ export const renderBootstrapGrid: GridRenderer = (host, options, size) => {
 
   // Breakpoint badge
   host.appendChild(svg("rect", {
-    x: 12, y: 12, width: 200, height: 22, rx: 4,
+    x: 12, y: 12, width: 230, height: 22, rx: 4,
     class: "gridly-fill--bold"
   }));
   host.appendChild(svg("text", {
