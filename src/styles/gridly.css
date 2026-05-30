@@ -1,0 +1,172 @@
+/*!
+ * Gridly v0.1.0 - layout debugging & design inspection toolkit
+ * MIT License
+ *
+ * This stylesheet is bundled into JS by default. Import it directly
+ * (e.g. `import "gridly/style.css"`) only if you want to disable
+ * runtime style injection or override these classes.
+ */
+
+/* ----- Theme palettes (data-attribute scoped) ----- */
+
+.gridly-overlay[data-gridly-theme="light"] {
+  --gridly-ink:      rgba(220, 38, 38, 0.18);
+  --gridly-ink-bold: rgba(220, 38, 38, 0.45);
+  --gridly-accent:   rgba(220, 38, 38, 0.75);
+  --gridly-bg:       transparent;
+}
+
+.gridly-overlay[data-gridly-theme="dark"] {
+  --gridly-ink:      rgba(96, 165, 250, 0.22);
+  --gridly-ink-bold: rgba(96, 165, 250, 0.55);
+  --gridly-accent:   rgba(96, 165, 250, 0.85);
+  --gridly-bg:       transparent;
+}
+
+.gridly-overlay[data-gridly-theme="blueprint"] {
+  --gridly-ink:      rgba(255, 255, 255, 0.22);
+  --gridly-ink-bold: rgba(255, 255, 255, 0.55);
+  --gridly-accent:   rgba(255, 255, 255, 0.90);
+  --gridly-bg:       rgba(15, 76, 129, 0.85);
+}
+
+.gridly-overlay[data-gridly-theme="cyberpunk"] {
+  --gridly-ink:      rgba(255, 0, 200, 0.30);
+  --gridly-ink-bold: rgba(0, 255, 220, 0.65);
+  --gridly-accent:   rgba(255, 230, 0, 0.95);
+  --gridly-bg:       rgba(10, 0, 20, 0.65);
+}
+
+.gridly-overlay[data-gridly-theme="figma"] {
+  --gridly-ink:      rgba(24, 160, 251, 0.20);
+  --gridly-ink-bold: rgba(24, 160, 251, 0.55);
+  --gridly-accent:   rgba(24, 160, 251, 0.85);
+  --gridly-bg:       transparent;
+}
+
+/* ----- Overlay surface ----- */
+
+.gridly-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--gridly-bg, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.gridly-overlay .gridly-surface {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* ----- Grid drawing primitives ----- */
+
+.gridly-overlay .gridly-line {
+  stroke: var(--gridly-ink, rgba(220, 38, 38, 0.18));
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.gridly-overlay .gridly-line--bold {
+  stroke: var(--gridly-ink-bold, rgba(220, 38, 38, 0.45));
+  stroke-width: 1;
+}
+
+.gridly-overlay .gridly-line--accent {
+  stroke: var(--gridly-accent, rgba(220, 38, 38, 0.75));
+  stroke-width: 1.5;
+}
+
+.gridly-overlay .gridly-fill {
+  fill: var(--gridly-ink, rgba(220, 38, 38, 0.18));
+}
+
+.gridly-overlay .gridly-fill--bold {
+  fill: var(--gridly-ink-bold, rgba(220, 38, 38, 0.45));
+}
+
+.gridly-overlay .gridly-column-fill {
+  fill: var(--gridly-ink, rgba(220, 38, 38, 0.10));
+  stroke: var(--gridly-ink-bold, rgba(220, 38, 38, 0.30));
+  stroke-width: 1;
+}
+
+.gridly-overlay .gridly-label {
+  fill: var(--gridly-accent, rgba(220, 38, 38, 0.75));
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  user-select: none;
+}
+
+/* ----- Floating control panel ----- */
+
+.gridly-panel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  pointer-events: auto;
+  background: rgba(20, 20, 24, 0.92);
+  color: #f4f4f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  display: grid;
+  gap: 8px;
+  min-width: 220px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.gridly-panel__title {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 10px;
+  opacity: 0.75;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gridly-panel__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gridly-panel__row label { opacity: 0.75; }
+
+.gridly-panel select,
+.gridly-panel input[type="number"] {
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font: inherit;
+  min-width: 110px;
+}
+
+.gridly-panel button {
+  background: rgba(255, 255, 255, 0.10);
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.gridly-panel button:hover { background: rgba(255, 255, 255, 0.18); }
+
+.gridly-panel__hint {
+  font-size: 10px;
+  opacity: 0.55;
+  line-height: 1.5;
+}

@@ -1,0 +1,71 @@
+{
+  "name": "gridly",
+  "version": "0.1.0",
+  "description": "A complete layout debugging and design inspection toolkit. Toggle 13+ grid types (columns, baseline, dots, golden ratio, isometric, hex, polar, radial, and more) over any website with a keyboard shortcut.",
+  "keywords": [
+    "grid",
+    "overlay",
+    "layout",
+    "design",
+    "baseline",
+    "columns",
+    "css-grid",
+    "debug",
+    "developer-tools",
+    "react"
+  ],
+  "license": "MIT",
+  "author": "Gridly Contributors",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "style": "./dist/gridly.css",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
+    },
+    "./style.css": "./dist/gridly.css",
+    "./dist/gridly.css": "./dist/gridly.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/copy-css.mjs",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.66",
+    "react": "^18.2.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.3"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
