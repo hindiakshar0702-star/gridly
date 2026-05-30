@@ -6,6 +6,8 @@ import { applyThemeVars } from "./ThemeManager";
 import { renderGrid } from "../grids";
 import { injectStyles } from "../styles/inject";
 import { controlPanel } from "./ControlPanel";
+import { launcher } from "./Launcher";
+import { computeSimulation, drawDeviceBackdrop, drawDeviceFrame } from "./DeviceSimulator";
 
 /**
  * Overlay is the host element appended to <body> that contains
@@ -58,6 +60,7 @@ export class Overlay {
 
     this.draw();
     this.syncPanel();
+    this.syncLauncher();
 
     if (typeof ResizeObserver !== "undefined") {
       this.resizeObserver = new ResizeObserver(this.onResize);
@@ -76,6 +79,9 @@ export class Overlay {
       this.root.parentNode.removeChild(this.root);
     }
     controlPanel.unmount();
+    // NOTE: launcher stays mounted even when overlay is hidden so the
+    // user has a way to bring it back. Call Gridly.hideLauncher() to
+    // remove it explicitly.
     this.root = null;
     this.surface = null;
   }
@@ -105,6 +111,8 @@ export class Overlay {
     applyThemeVars(this.root, this.options.theme);
     this.draw();
     this.syncPanel();
+    this.syncLauncher();
+    controlPanel.refresh();
   }
 
   getOptions(): ResolvedOptions {
@@ -119,16 +127,37 @@ export class Overlay {
     }
   }
 
+  private syncLauncher(): void {
+    if (this.options.showLauncher) {
+      if (!launcher.isMounted()) launcher.mount();
+    } else {
+      if (launcher.isMounted()) launcher.unmount();
+    }
+  }
+
   private draw(): void {
     if (!this.surface) return;
     clearChildren(this.surface);
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    this.surface.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    this.surface.setAttribute("width", String(width));
-    this.surface.setAttribute("height", String(height));
+    const fullWidth = window.innerWidth;
+    const fullHeight = window.innerHeight;
+    this.surface.setAttribute("viewBox", `0 0 ${fullWidth} ${fullHeight}`);
+    this.surface.setAttribute("width", String(fullWidth));
+    this.surface.setAttribute("height", String(fullHeight));
 
-    renderGrid(this.surface, this.options, { width, height });
+    const sim = computeSimulation(this.options, fullWidth, fullHeight);
+
+    // 1. Backdrop letterboxes (drawn first so the grid sits on top)
+    drawDeviceBackdrop(this.surface, sim, fullWidth, fullHeight);
+
+    // 2. The grid itself, translated into the simulated viewport
+    const gridGroup = svg("g", {
+      transform: sim.active ? `translate(${sim.offsetX}, 0)` : ""
+    });
+    this.surface.appendChild(gridGroup);
+    renderGrid(gridGroup, this.options, { width: sim.width, height: sim.height });
+
+    // 3. Device frame outline + label on top of everything
+    drawDeviceFrame(this.surface, sim, fullWidth, fullHeight);
   }
 }

@@ -8,6 +8,7 @@ let teardown: (() => void) | null = null;
  *   Ctrl/Cmd + G          → toggle overlay
  *   Ctrl/Cmd + Shift + G  → cycle grid type
  *   Ctrl/Cmd + D          → cycle theme (only when overlay visible)
+ *   Ctrl/Cmd + Shift + D  → cycle device simulator
  *   Ctrl/Cmd + P          → toggle floating control panel
  *
  * Idempotent: calling multiple times has no effect.
@@ -38,8 +39,15 @@ export function initKeyboard(): () => void {
       return;
     }
 
+    // Cycle device simulator
+    if (key === "d" && event.shiftKey && Gridly.isVisible()) {
+      event.preventDefault();
+      Gridly.cycleDevice(1);
+      return;
+    }
+
     // Cycle theme (avoid hijacking Ctrl+D bookmark when not visible)
-    if (key === "d" && Gridly.isVisible()) {
+    if (key === "d" && !event.shiftKey && Gridly.isVisible()) {
       event.preventDefault();
       Gridly.cycleTheme(1);
       return;

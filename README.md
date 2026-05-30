@@ -1,47 +1,86 @@
 # Gridly
 
 > A complete layout debugging & design inspection toolkit.
-> Toggle 13+ grid types over any website with a single keyboard shortcut.
+> 18 grid types, 5 themes, device simulator, and a one-click control panel.
 
 ```bash
 npm install gridly
 ```
 
 ```ts
-import { Gridly } from "gridly";
-
-Gridly.show({ type: "columns", columns: 12, gutter: 24 });
+import "gridly";
+// That's it. A floating "Gridly" button appears bottom-left.
+// Click it to open the panel and start designing.
 ```
 
-That's it. The grid is now overlaid on your site. Press `Ctrl+G` to toggle.
+…or do it imperatively:
+
+```ts
+import { Gridly } from "gridly";
+
+Gridly.show({
+  type: "columns",
+  columns: 12,
+  gutter: 24,
+  marginLeft: 32,
+  marginRight: 32,
+  showColumnNumbers: true,
+  showGutterNumbers: true,
+  device: "tablet"
+});
+```
 
 ---
 
-## Why Gridly?
+## What's new in v0.2.0
 
-Designers and frontend developers spend a lot of time eyeballing alignment.
-Gridly drops a real, configurable design grid on top of your live site so you
-can see *exactly* where things should snap. No browser extension required —
-it's just an NPM package you import in dev.
+- 🟢 **One-click launcher button** — auto-mounts in browsers, click to open the full panel
+- 🟢 **5 new grid types** — `flex`, `fibonacci`, `diagonal`, `percentage`, `bootstrap` (now 18 total)
+- 🟢 **Asymmetric margins** — `marginLeft` and `marginRight` (with `margin` as fallback)
+- 🟢 **Numbered labels** — toggle `gridOverlay_0, gridOverlay_1, …` and `gutter_0, gutter_1, …`
+- 🟢 **Device simulator** — preview your site at `mobile` (375), `tablet` (768), `laptop` (1366), `desktop` (1920)
+- 🟢 **Live breakpoint editor** — add / remove / edit breakpoints right inside the panel
+- 🟢 **Color picker, opacity slider** — built into the panel
 
-## Features
+## Features at a glance
 
-- **13 grid types** — columns, baseline, square, dots, container, modular, golden, thirds, isometric, hex, polar, radial, responsive
+- **18 grid types**
+  | | | |
+  |---|---|---|
+  | `columns` | `baseline` | `square` |
+  | `dots` | `container` | `modular` |
+  | `golden` | `thirds` | `isometric` |
+  | `hex` | `polar` | `radial` |
+  | `responsive` | `flex` | `fibonacci` |
+  | `diagonal` | `percentage` | `bootstrap` |
 - **5 themes** — `light`, `dark`, `blueprint`, `cyberpunk`, `figma` (+ `auto`)
-- **Keyboard shortcuts** out of the box (Ctrl+G, Ctrl+Shift+G, Ctrl+D, Ctrl+P)
+- **4 device simulators** — `mobile`, `tablet`, `laptop`, `desktop`
+- **One-click launcher button** with full control panel
+- **Keyboard shortcuts** out of the box
 - **React adapter** — `<GridOverlay />`, `<GridBackground />`, `useGridly()`
-- **Zero dependencies** in the core package
-- **TypeScript** types built in
-- **SVG-based** rendering — crisp at any zoom level
+- **Zero runtime dependencies**, TypeScript types built in
 
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl/Cmd + G` | Toggle overlay |
-| `Ctrl/Cmd + Shift + G` | Cycle through grid types |
-| `Ctrl/Cmd + D` | Cycle through themes (when visible) |
-| `Ctrl/Cmd + P` | Toggle floating control panel |
+| `Ctrl/Cmd + Shift + G` | Cycle grid type |
+| `Ctrl/Cmd + D` | Cycle theme |
+| `Ctrl/Cmd + Shift + D` | Cycle device simulator |
+| `Ctrl/Cmd + P` | Toggle control panel |
+
+## Control Panel
+
+Click the launcher button (or press `Ctrl+P` once the overlay is shown) to open the panel:
+
+| Section | Controls |
+|---------|----------|
+| **Grid** | Type · Theme · Device |
+| **Layout** | Grid Overlay (columns) · Gutter · Margin L · Margin R · Max width · Baseline |
+| **Labels** | Show `gridOverlay_n` · Show `gutter_n` |
+| **Appearance** | Opacity · Color picker |
+| **Breakpoints** | Editable table — add / remove / tweak each breakpoint live |
 
 ## Usage
 
@@ -51,16 +90,31 @@ it's just an NPM package you import in dev.
 import { Gridly } from "gridly";
 
 // Show
-Gridly.show({ type: "columns", columns: 12, gutter: 24, theme: "dark" });
+Gridly.show({
+  type: "columns",
+  columns: 12,
+  gutter: 24,
+  marginLeft: 40,
+  marginRight: 40,
+  maxWidth: 1280,
+  showColumnNumbers: true,   // gridOverlay_0, gridOverlay_1, ...
+  showGutterNumbers: true,   // gutter_0, gutter_1, ...
+  theme: "blueprint",
+  device: "tablet"
+});
 
 // Update
 Gridly.update({ columns: 16 });
 Gridly.setType("baseline");
 Gridly.setTheme("cyberpunk");
+Gridly.setDevice("mobile");
 
 // Toggle / hide
 Gridly.toggle();
 Gridly.hide();
+
+// Hide the launcher entirely
+Gridly.hideLauncher();
 ```
 
 ### React
@@ -71,7 +125,15 @@ import { GridOverlay } from "gridly/react";
 export default function App() {
   return (
     <>
-      <GridOverlay type="columns" columns={12} theme="dark" />
+      <GridOverlay
+        type="columns"
+        columns={12}
+        marginLeft={40}
+        marginRight={40}
+        showColumnNumbers
+        showGutterNumbers
+        device="laptop"
+      />
       <YourApp />
     </>
   );
@@ -109,20 +171,39 @@ const GridOverlay = dynamic(
 ## Grid Types
 
 ```ts
-Gridly.show({ type: "columns",    columns: 12, gutter: 24, maxWidth: 1280 });
+Gridly.show({ type: "columns",    columns: 12, gutter: 24, marginLeft: 40, marginRight: 40 });
 Gridly.show({ type: "baseline",   baseline: 8 });
 Gridly.show({ type: "square",     size: 40 });
 Gridly.show({ type: "dots",       spacing: 24, dotRadius: 1.5 });
-Gridly.show({ type: "container",  maxWidth: 1280, margin: 32 });
-Gridly.show({ type: "modular",    columns: 12, rows: 6, gutter: 24 });
+Gridly.show({ type: "container",  maxWidth: 1280 });
+Gridly.show({ type: "modular",    columns: 12, rows: 6 });
 Gridly.show({ type: "golden" });
 Gridly.show({ type: "thirds" });
 Gridly.show({ type: "isometric",  size: 40 });
 Gridly.show({ type: "hex",        hexRadius: 28 });
 Gridly.show({ type: "polar",      rings: 6, sectors: 12 });
 Gridly.show({ type: "radial",     rings: 6, sectors: 12, showNumbers: true });
-Gridly.show({ type: "responsive" }); // auto-detects breakpoint
+Gridly.show({ type: "responsive" });   // auto-detects breakpoint
+Gridly.show({ type: "flex" });         // alignment guides
+Gridly.show({ type: "fibonacci" });    // phi spiral
+Gridly.show({ type: "diagonal" });     // 45-deg cross-hatch
+Gridly.show({ type: "percentage" });   // 10/25/50/75% guides
+Gridly.show({ type: "bootstrap" });    // Bootstrap container widths
 ```
+
+## Device Simulator
+
+```ts
+Gridly.setDevice("mobile");    // 375 × 812
+Gridly.setDevice("tablet");    // 768 × 1024
+Gridly.setDevice("laptop");    // 1366 × 768
+Gridly.setDevice("desktop");   // 1920 × 1080
+Gridly.setDevice("responsive"); // off — full viewport
+```
+
+A dimmed letterbox masks anything outside the simulated viewport, and a
+labeled frame shows the device dimensions. The grid renders inside the
+simulated viewport — perfect for sanity-checking responsive breakpoints.
 
 ## Themes
 
@@ -135,7 +216,8 @@ Gridly.setTheme("figma");      // soft blue
 Gridly.setTheme("auto");       // follows prefers-color-scheme
 ```
 
-You can also override the ink color directly:
+You can also override the ink color directly via the panel color picker
+or:
 
 ```ts
 Gridly.show({ color: "#ff00aa", opacity: 0.5 });
@@ -167,52 +249,15 @@ All classes are prefixed with `gridly-` and CSS variables (`--gridly-ink`,
 | `update(patch)` | Patch options on the live overlay. |
 | `setType(type)` | Switch grid type. |
 | `setTheme(theme)` | Switch theme. |
-| `cycleType(dir?)` | Step through `TYPE_CYCLE` (default forward). |
+| `setDevice(device)` | Switch device simulator. |
+| `cycleType(dir?)` | Step through `TYPE_CYCLE`. |
 | `cycleTheme(dir?)` | Step through `THEME_CYCLE`. |
+| `cycleDevice(dir?)` | Step through `DEVICE_CYCLE`. |
+| `showLauncher()` | Mount the launcher button. |
+| `hideLauncher()` | Unmount the launcher button. |
 | `getOptions()` | Returns the resolved options of the live overlay. |
 
-### `GridlyOptions`
-
-See [`src/types/index.ts`](./src/types/index.ts) for the full type. Highlights:
-
-```ts
-interface GridlyOptions {
-  type?: GridType;
-  theme?: ThemeName;
-  color?: string;
-  opacity?: number;        // 0..1
-  zIndex?: number;
-  showPanel?: boolean;
-  keyboard?: boolean;
-
-  // Column / container / modular
-  columns?: number;
-  gutter?: number;
-  margin?: number;
-  maxWidth?: number;
-  rows?: number;
-
-  // Baseline
-  baseline?: number;
-
-  // Square / dots / isometric
-  size?: number;
-  spacing?: number;
-  dotRadius?: number;
-
-  // Hex
-  hexRadius?: number;
-
-  // Polar / radial
-  rings?: number;
-  sectors?: number;
-
-  // Responsive
-  breakpoints?: Breakpoint[];
-
-  showNumbers?: boolean;
-}
-```
+See [`src/types/index.ts`](./src/types/index.ts) for the full `GridlyOptions` type.
 
 ## Roadmap
 
@@ -222,15 +267,6 @@ interface GridlyOptions {
 - Vue + Svelte adapters
 - Layout recording / preset sharing
 - AI layout suggestions
-
-## Contributing
-
-```bash
-git clone https://github.com/hindiakshar0702-star/gridly.git
-cd gridly
-npm install
-npm run dev
-```
 
 ## License
 

@@ -1,5 +1,6 @@
-import type { GridlyOptions, GridType, ResolvedOptions, ThemeName } from "../types";
+import type { DevicePreset, GridlyOptions, GridType, ResolvedOptions, ThemeName } from "../types";
 import { Overlay } from "./Overlay";
+import { launcher } from "./Launcher";
 
 /**
  * The main Gridly facade.
@@ -9,6 +10,7 @@ import { Overlay } from "./Overlay";
  *   Gridly.show({ type: "columns", columns: 12 });
  *   Gridly.toggle();
  *   Gridly.setType("baseline");
+ *   Gridly.setDevice("mobile");
  */
 class GridlyClass {
   private overlay: Overlay | null = null;
@@ -28,7 +30,12 @@ class GridlyClass {
     "hex",
     "polar",
     "radial",
-    "responsive"
+    "responsive",
+    "flex",
+    "fibonacci",
+    "diagonal",
+    "percentage",
+    "bootstrap"
   ];
 
   /** Theme cycle used by Ctrl+D. */
@@ -38,6 +45,15 @@ class GridlyClass {
     "blueprint",
     "cyberpunk",
     "figma"
+  ];
+
+  /** Device cycle. */
+  static readonly DEVICE_CYCLE: DevicePreset[] = [
+    "responsive",
+    "mobile",
+    "tablet",
+    "laptop",
+    "desktop"
   ];
 
   show(options: GridlyOptions = {}): void {
@@ -83,28 +99,54 @@ class GridlyClass {
     this.update({ theme });
   }
 
+  setDevice(device: DevicePreset): void {
+    this.update({ device });
+  }
+
   cycleType(direction: 1 | -1 = 1): GridType {
-    const cycle = GridlyClass.TYPE_CYCLE;
-    const current = (this.lastOptions.type ?? "columns") as GridType;
-    const idx = cycle.indexOf(current);
-    const nextIdx = ((idx === -1 ? 0 : idx) + direction + cycle.length) % cycle.length;
-    const next = cycle[nextIdx];
-    this.setType(next);
-    return next;
+    return this.cycleAcross(GridlyClass.TYPE_CYCLE, "type", direction) as GridType;
   }
 
   cycleTheme(direction: 1 | -1 = 1): ThemeName {
-    const cycle = GridlyClass.THEME_CYCLE;
-    const current = (this.lastOptions.theme ?? "light") as ThemeName;
-    const idx = cycle.indexOf(current);
-    const nextIdx = ((idx === -1 ? 0 : idx) + direction + cycle.length) % cycle.length;
-    const next = cycle[nextIdx];
-    this.setTheme(next);
-    return next;
+    return this.cycleAcross(GridlyClass.THEME_CYCLE, "theme", direction) as ThemeName;
+  }
+
+  cycleDevice(direction: 1 | -1 = 1): DevicePreset {
+    return this.cycleAcross(GridlyClass.DEVICE_CYCLE, "device", direction) as DevicePreset;
+  }
+
+  /**
+   * Mount only the launcher button — useful for "click to start" UX
+   * without immediately drawing a grid.
+   */
+  showLauncher(): void {
+    if (!launcher.isMounted()) launcher.mount();
+  }
+
+  hideLauncher(): void {
+    launcher.unmount();
+    // Also persist the preference so subsequent show() calls don't bring it back.
+    this.lastOptions.showLauncher = false;
+    if (this.overlay) this.overlay.update(this.lastOptions);
   }
 
   getOptions(): ResolvedOptions | null {
     return this.overlay ? this.overlay.getOptions() : null;
+  }
+
+  // ─── Internal ─────────────────────────────────────────────────────
+
+  private cycleAcross<K extends keyof GridlyOptions>(
+    cycle: ReadonlyArray<string>,
+    key: K,
+    direction: 1 | -1
+  ): string {
+    const current = (this.lastOptions[key] as unknown as string) ?? cycle[0];
+    const idx = cycle.indexOf(current);
+    const nextIdx = ((idx === -1 ? 0 : idx) + direction + cycle.length) % cycle.length;
+    const next = cycle[nextIdx];
+    this.update({ [key]: next } as Partial<GridlyOptions>);
+    return next;
   }
 }
 
