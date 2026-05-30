@@ -47,14 +47,14 @@ export type {
 
 export { DEFAULTS, DEFAULT_BREAKPOINTS, mergeOptions, pickBreakpoint } from "./utils/mergeOptions";
 
-import { Gridly } from "./core/Gridly";
 import { initKeyboard } from "./core/KeyboardController";
 
 // Auto-initialize keyboard shortcuts in browser environments.
-// Users can opt out by calling Gridly.disableKeyboard() (returns the teardown).
+// Users can opt out by calling the returned teardown from initKeyboard.
 if (typeof window !== "undefined") {
   initKeyboard();
 }
 
-// Default export is the Gridly singleton for convenience.
-export default Gridly;
+// Note: Gridly is exported as a named export only (not default).
+// Use:    import { Gridly } from "gridly";
+// CJS:    const { Gridly } = require("gridly");
