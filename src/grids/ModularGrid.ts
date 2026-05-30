@@ -10,20 +10,26 @@ export const renderModularGrid: GridRenderer = (host, options, size) => {
   const { columns, gutter, rows, showNumbers, showColumnNumbers } = options;
   const { startX, contentWidth } = computeBox(options, size.width);
 
-  const totalGutters = gutter * Math.max(0, columns - 1);
-  const colW = (contentWidth - totalGutters) / columns;
+  const safeCols = Math.max(1, columns);
+  const safeRows = Math.max(1, rows);
+
+  const totalGutters = gutter * Math.max(0, safeCols - 1);
+  const colW = Math.max(0, (contentWidth - totalGutters) / safeCols);
 
   // Vertical: use a symmetric vertical margin equal to options.margin
-  // (for now — could add marginTop/marginBottom in a future patch).
+  // (could add marginTop/marginBottom in a future patch).
   const vMargin = options.margin;
   const rowGutter = gutter;
-  const totalRowGutters = rowGutter * Math.max(0, rows - 1);
+  const totalRowGutters = rowGutter * Math.max(0, safeRows - 1);
   const usableHeight = Math.max(0, size.height - vMargin * 2);
-  const rowH = (usableHeight - totalRowGutters) / rows;
+  const rowH = Math.max(0, (usableHeight - totalRowGutters) / safeRows);
   const startY = vMargin;
 
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < columns; c++) {
+  // Skip if layout is degenerate
+  if (contentWidth <= 0 || colW <= 0 || rowH <= 0) return;
+
+  for (let r = 0; r < safeRows; r++) {
+    for (let c = 0; c < safeCols; c++) {
       const x = startX + c * (colW + gutter);
       const y = startY + r * (rowH + rowGutter);
       host.appendChild(svg("rect", {
