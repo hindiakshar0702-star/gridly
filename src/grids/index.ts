@@ -15,6 +15,7 @@ import { renderFlexGrid } from "./FlexGrid";
 import { renderFibonacciGrid } from "./FibonacciGrid";
 import { renderDiagonalGrid } from "./DiagonalGrid";
 import { renderPercentageGrid } from "./PercentageGrid";
+import { renderDetectorGrid } from "./DetectorGrid";
 
 /**
  * Registry mapping each grid type to its renderer.
@@ -38,7 +39,8 @@ export const RENDERERS: Record<GridType, GridRenderer> = {
   fibonacci:  renderFibonacciGrid,
   diagonal:   renderDiagonalGrid,
   percentage: renderPercentageGrid,
-  bootstrap:  renderBootstrapGrid
+  bootstrap:  renderBootstrapGrid,
+  detector:   renderDetectorGrid
 };
 
 export function renderGrid(
@@ -68,5 +70,6 @@ export {
   renderFlexGrid,
   renderFibonacciGrid,
   renderDiagonalGrid,
-  renderPercentageGrid
+  renderPercentageGrid,
+  renderDetectorGrid
 };

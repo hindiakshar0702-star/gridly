@@ -45,7 +45,12 @@ export const DEFAULTS: ResolvedOptions = {
   showGutterNumbers: false,
   columnLabelPrefix: "gridOverlay_",
   gutterLabelPrefix: "gutter_",
-  showNumbers: false
+  showNumbers: false,
+
+  detectorTarget: "",
+  detectorAutoScan: true,
+  detectorShowLabels: true,
+  detectorShowItems: true
 };
 
 /**

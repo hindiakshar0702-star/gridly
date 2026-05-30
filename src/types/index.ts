@@ -21,7 +21,9 @@ export type GridType =
   | "fibonacci"
   | "diagonal"
   | "percentage"
-  | "bootstrap";
+  | "bootstrap"
+  // v0.3.0 additions:
+  | "detector";
 
 export type ThemeName =
   | "light"
@@ -159,6 +161,20 @@ export interface GridlyOptions {
    * compatibility with v0.1.0.
    */
   showNumbers?: boolean;
+
+  // ----- Grid Detector (type: "detector") -----
+  /**
+   * CSS selector(s) to inspect. Comma-separated list supported.
+   * If empty AND detectorAutoScan is true, scans the whole document.
+   * If empty AND detectorAutoScan is false, no grids are drawn.
+   */
+  detectorTarget?: string;
+  /** Scan the entire DOM for elements with `display: grid` or `flex`. */
+  detectorAutoScan?: boolean;
+  /** Show overlay labels with detected grid metadata. */
+  detectorShowLabels?: boolean;
+  /** Show the actual child item rectangles within each detected grid. */
+  detectorShowItems?: boolean;
 }
 
 export interface ResolvedOptions extends Required<Omit<

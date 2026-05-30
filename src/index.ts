@@ -50,8 +50,22 @@ export {
   renderFlexGrid,
   renderFibonacciGrid,
   renderDiagonalGrid,
-  renderPercentageGrid
+  renderPercentageGrid,
+  renderDetectorGrid
 } from "./grids";
+
+export {
+  detectGrid,
+  detectAllGrids,
+  resolveTargets,
+  getElementSelector
+} from "./core/GridDetector";
+export type {
+  DetectedGrid,
+  DetectedItem,
+  DetectedRect,
+  DetectedDisplay
+} from "./core/GridDetector";
 
 export type {
   GridlyOptions,

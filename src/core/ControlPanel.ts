@@ -6,7 +6,7 @@ import { DEVICE_LIST, DEVICE_SPECS } from "./DeviceSimulator";
 const TYPES: GridType[] = [
   "columns", "baseline", "square", "dots", "container", "modular",
   "golden", "thirds", "isometric", "hex", "polar", "radial", "responsive",
-  "flex", "fibonacci", "diagonal", "percentage", "bootstrap"
+  "flex", "fibonacci", "diagonal", "percentage", "bootstrap", "detector"
 ];
 
 const THEMES: ThemeName[] = [
@@ -15,6 +15,7 @@ const THEMES: ThemeName[] = [
 
 /** Which grid types use which options. Drives row visibility in the panel. */
 const COLUMN_TYPES: GridType[] = ["columns", "responsive", "modular", "container", "bootstrap"];
+const DETECTOR_TYPES: GridType[] = ["detector"];
 
 type ControlMap = Record<string, HTMLInputElement | HTMLSelectElement>;
 type TypedRow = { row: HTMLDivElement | HTMLTableElement; types: GridType[] | "all" };
@@ -138,6 +139,26 @@ export class ControlPanel {
       (v) => Gridly.update({ showGutterNumbers: v })
     )));
 
+    // DETECTOR section -----------------------------------------------
+    body.appendChild(this.typedSection("Detector", DETECTOR_TYPES));
+    body.appendChild(this.typedRow(DETECTOR_TYPES, "Target", this.makeText(
+      "detectorTarget", opts.detectorTarget,
+      ".container, .grid",
+      (v) => Gridly.update({ detectorTarget: v })
+    )));
+    body.appendChild(this.typedRow(DETECTOR_TYPES, "", this.checkboxControl(
+      "detectorAutoScan", "Auto-scan whole page", opts.detectorAutoScan,
+      (v) => Gridly.update({ detectorAutoScan: v })
+    )));
+    body.appendChild(this.typedRow(DETECTOR_TYPES, "", this.checkboxControl(
+      "detectorShowLabels", "Show labels", opts.detectorShowLabels,
+      (v) => Gridly.update({ detectorShowLabels: v })
+    )));
+    body.appendChild(this.typedRow(DETECTOR_TYPES, "", this.checkboxControl(
+      "detectorShowItems", "Show item bounds", opts.detectorShowItems,
+      (v) => Gridly.update({ detectorShowItems: v })
+    )));
+
     // APPEARANCE section ---------------------------------------------
     body.appendChild(this.section("Appearance"));
     body.appendChild(this.row("Opacity", this.makeNumber(
@@ -221,6 +242,10 @@ export class ControlPanel {
       this.setInput("color",           opts.color ?? "");
       this.setCheckbox("showColumnNumbers", opts.showColumnNumbers);
       this.setCheckbox("showGutterNumbers", opts.showGutterNumbers);
+      this.setInput("detectorTarget",       opts.detectorTarget ?? "");
+      this.setCheckbox("detectorAutoScan",  opts.detectorAutoScan);
+      this.setCheckbox("detectorShowLabels", opts.detectorShowLabels);
+      this.setCheckbox("detectorShowItems",  opts.detectorShowItems);
       this.updateRowVisibility(opts.type);
     } finally {
       this.rebuilding = false;
@@ -354,6 +379,26 @@ export class ControlPanel {
       type: "color",
       name,
       value: value || "#dc2626"
+    });
+    input.addEventListener("input", () => {
+      if (this.rebuilding) return;
+      onChange((input as HTMLInputElement).value);
+    });
+    this.inputs[name] = input;
+    return input;
+  }
+
+  private makeText(
+    name: string,
+    value: string,
+    placeholder: string,
+    onChange: (v: string) => void
+  ): HTMLInputElement {
+    const input = el("input", {
+      type: "text",
+      name,
+      placeholder,
+      value: value ?? ""
     });
     input.addEventListener("input", () => {
       if (this.rebuilding) return;
