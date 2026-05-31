@@ -4,6 +4,7 @@ import { rafThrottle } from "../utils/debounce";
 import { clearChildren, el, svg } from "../utils/createElement";
 import { applyThemeVars } from "./ThemeManager";
 import { renderGrid } from "../grids";
+import { drawDebugOverlay } from "../grids/DebugOverlay";
 import { injectStyles } from "../styles/inject";
 import { controlPanel } from "./ControlPanel";
 import { launcher } from "./Launcher";
@@ -238,6 +239,17 @@ export class Overlay {
 
     // 3. Device frame outline + label on top of everything
     drawDeviceFrame(this.surface, sim, fullWidth, fullHeight);
+
+    // 4. Debug overlay — drawn LAST so it sits on top of everything,
+    //    inside the same translated group as the grid so coordinates
+    //    line up with what the grid actually rendered.
+    if (this.options.showDebugOverlay) {
+      const debugGroup = svg("g", {
+        transform: sim.active ? `translate(${sim.offsetX}, 0)` : ""
+      });
+      this.surface.appendChild(debugGroup);
+      drawDebugOverlay(debugGroup, this.options, { width: sim.width, height: sim.height });
+    }
   }
 }
 

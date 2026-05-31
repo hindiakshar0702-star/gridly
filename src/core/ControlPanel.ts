@@ -175,6 +175,11 @@ export class ControlPanel {
       "color", opts.color ?? "",
       (v) => Gridly.update({ color: v || undefined })
     )));
+    // Constraint debug overlay — most useful for column-based grids
+    body.appendChild(this.typedRow(COLUMN_TYPES, "", this.checkboxControl(
+      "showDebugOverlay", "Show constraint debug overlay", opts.showDebugOverlay,
+      (v) => Gridly.update({ showDebugOverlay: v })
+    )));
 
     // BREAKPOINTS section --------------------------------------------
     body.appendChild(this.typedSection("Breakpoints", ["responsive"]));
@@ -252,6 +257,7 @@ export class ControlPanel {
       this.setCheckbox("detectorAutoScan",  opts.detectorAutoScan);
       this.setCheckbox("detectorShowLabels", opts.detectorShowLabels);
       this.setCheckbox("detectorShowItems",  opts.detectorShowItems);
+      this.setCheckbox("showDebugOverlay",   opts.showDebugOverlay);
       this.updateRowVisibility(opts.type);
     } finally {
       this.rebuilding = false;

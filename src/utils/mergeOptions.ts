@@ -16,6 +16,7 @@ export const DEFAULTS: ResolvedOptions = {
   zIndex: 2147483646,
   showPanel: false,
   showLauncher: true,
+  showDebugOverlay: false,
   keyboard: true,
 
   columns: 12,

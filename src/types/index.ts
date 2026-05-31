@@ -89,6 +89,14 @@ export interface GridlyOptions {
   /** Show floating "open panel" launcher button. Defaults to true. */
   showLauncher?: boolean;
 
+  /**
+   * Render a constraint debug overlay on top of the regular grid.
+   * Shows viewport bounds, container bounds, grid origin (containerX),
+   * column boundaries, right-margin marker, and a stats panel with
+   * the live constraint values. Useful for verifying layout invariants.
+   */
+  showDebugOverlay?: boolean;
+
   /** Enable keyboard shortcuts. Defaults to true. */
   keyboard?: boolean;
 
