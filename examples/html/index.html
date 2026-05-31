@@ -14,12 +14,15 @@
         color: #18181b;
       }
       /*
-        Layout values used here are also passed to Gridly.show() below
-        so the overlay aligns perfectly with the actual card grid.
+        Fluid container — uses leftMargin/rightMargin via padding only,
+        NO max-width: 1200 + margin: 0 auto auto-centering. This matches
+        the constraint-based layout system: containerX = leftMargin always.
+
+        Try in panel: change Margin L → grid origin moves by exactly that
+        much. Change Margin R → only right edge moves. Change Columns or
+        Gutter → grid origin stays put.
       */
       .container {
-        max-width: 1200px;
-        margin: 0 auto;
         padding: 32px 40px 80px;
       }
       header h1 { font-size: 28px; margin: 0 0 4px; }
@@ -56,17 +59,21 @@
   <body>
     <div class="container">
       <header>
-        <h1>Gridly demo</h1>
+        <h1>Gridly demo &mdash; constraint-based layout</h1>
         <p>
-          Click the floating <b>Gridly</b> button (bottom-left) or press
-          <kbd>Ctrl</kbd>+<kbd>G</kbd> to toggle the grid overlay.
+          Open the panel (bottom-left button) and watch the constraint
+          invariants hold:
         </p>
-        <p style="margin-top:6px">
-          The overlay below is configured to <b>match this page exactly</b>
-          (12 columns &middot; 24px gutter &middot; 40px outer padding &middot;
-          1200px max-width). Toggle <code>Show gridOverlay_n</code> and
-          <code>Show gutter_n</code> in the panel to see column &amp; gutter
-          numbering line up with the cards.
+        <ul style="margin:8px 0 0; opacity:0.85; line-height:1.6">
+          <li><b>Margin L</b> &rarr; grid origin moves by exactly that amount.</li>
+          <li><b>Margin R</b> &rarr; only the right edge moves; origin stays put.</li>
+          <li><b>Gutter</b> &rarr; only column widths + spacing change.</li>
+          <li><b>Grid Overlay</b> (column count) &rarr; origin never moves.</li>
+        </ul>
+        <p style="margin-top:12px">
+          Toggle <b>Show constraint debug overlay</b> in the panel to see
+          viewport bounds, container bounds, the orange origin marker,
+          and a live stats panel.
         </p>
       </header>
 
@@ -109,19 +116,21 @@
     <script type="module">
       import { Gridly } from "../../dist/index.js";
 
-      // Auto-show the grid configured to match the .container layout.
-      // The overlay's columns will line up with the actual cards.
+      // Constraint-based: containerX = leftMargin = 40 (matches the
+      // .container's padding-left). The grid extends edge-to-edge of
+      // the .container's content box.
       Gridly.show({
         type: "columns",
         columns: 12,
         gutter: 24,
         marginLeft: 40,
         marginRight: 40,
-        maxWidth: 1200,
+        maxWidth: 0,                 // fluid — let it span full width
         theme: "light",
         showColumnNumbers: true,
-        showGutterNumbers: true,
-        showPanel: false   // click the launcher to open
+        showGutterNumbers: false,
+        showDebugOverlay: true,      // turn off via the panel checkbox
+        showPanel: false             // click the launcher to open
       });
     </script>
   </body>
