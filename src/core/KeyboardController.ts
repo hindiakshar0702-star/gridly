@@ -8,10 +8,17 @@ let teardown: (() => void) | null = null;
  *   Ctrl/Cmd + G          → toggle overlay
  *   Ctrl/Cmd + Shift + G  → cycle grid type
  *   Ctrl/Cmd + D          → cycle theme (only when overlay visible)
+ *   Ctrl/Cmd + Shift + D  → cycle device simulator
  *   Ctrl/Cmd + P          → toggle floating control panel
  *
  * Idempotent: calling multiple times has no effect.
  * Returns a teardown function.
+ *
+ * Shortcuts are deliberately suppressed when the keyboard event
+ * targets an editable element (input, textarea, select,
+ * contenteditable) UNLESS the editable element is inside the
+ * Gridly panel itself — so users can still close the panel
+ * with Ctrl+P while the target input is focused.
  */
 export function initKeyboard(): () => void {
   if (typeof window === "undefined") return () => undefined;
@@ -20,6 +27,11 @@ export function initKeyboard(): () => void {
   const handler = (event: KeyboardEvent): void => {
     const mod = event.ctrlKey || event.metaKey;
     if (!mod) return;
+
+    if (isEditableTarget(event.target) && !isInsideGridlyPanel(event.target)) {
+      // User is typing on the host page — don't hijack their shortcuts.
+      return;
+    }
 
     const key = event.key.toLowerCase();
 
@@ -38,8 +50,15 @@ export function initKeyboard(): () => void {
       return;
     }
 
+    // Cycle device simulator
+    if (key === "d" && event.shiftKey && Gridly.isVisible()) {
+      event.preventDefault();
+      Gridly.cycleDevice(1);
+      return;
+    }
+
     // Cycle theme (avoid hijacking Ctrl+D bookmark when not visible)
-    if (key === "d" && Gridly.isVisible()) {
+    if (key === "d" && !event.shiftKey && Gridly.isVisible()) {
       event.preventDefault();
       Gridly.cycleTheme(1);
       return;
@@ -62,4 +81,16 @@ export function initKeyboard(): () => void {
     teardown = null;
   };
   return teardown;
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
+function isInsideGridlyPanel(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.closest(".gridly-panel") !== null;
 }

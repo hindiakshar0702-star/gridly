@@ -13,34 +13,22 @@
         background: #fafafa;
         color: #18181b;
       }
-      header {
-        padding: 32px 40px 16px;
-        max-width: 1200px;
-        margin: 0 auto;
+      /*
+        Fluid container — uses leftMargin/rightMargin via padding only,
+        NO max-width: 1200 + margin: 0 auto auto-centering. This matches
+        the constraint-based layout system: containerX = leftMargin always.
+
+        Try in panel: change Margin L → grid origin moves by exactly that
+        much. Change Margin R → only right edge moves. Change Columns or
+        Gutter → grid origin stays put.
+      */
+      .container {
+        padding: 32px 40px 80px;
       }
       header h1 { font-size: 28px; margin: 0 0 4px; }
       header p  { margin: 0; opacity: 0.7; }
-      main {
-        padding: 16px 40px 80px;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-      .controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin: 16px 0 32px;
-      }
-      .controls button {
-        font: inherit;
-        padding: 6px 10px;
-        border-radius: 6px;
-        border: 1px solid rgba(0,0,0,0.15);
-        background: white;
-        cursor: pointer;
-      }
-      .controls button:hover { background: #f4f4f5; }
       .grid {
+        margin-top: 24px;
         display: grid;
         grid-template-columns: repeat(12, 1fr);
         gap: 24px;
@@ -50,8 +38,8 @@
         background: white;
         border: 1px solid rgba(0,0,0,0.08);
         border-radius: 12px;
-        padding: 24px;
-        min-height: 160px;
+        padding: 20px;
+        min-height: 140px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.04);
       }
       .card h3 { margin: 0 0 8px; font-size: 16px; }
@@ -65,35 +53,29 @@
         font-family: ui-monospace, Menlo, Consolas, monospace;
         font-size: 11px;
       }
+      code { font-family: ui-monospace, Menlo, Consolas, monospace; }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Gridly demo</h1>
-      <p>
-        Press <kbd>Ctrl</kbd>+<kbd>G</kbd> to toggle &middot;
-        <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd> to cycle types &middot;
-        <kbd>Ctrl</kbd>+<kbd>D</kbd> to cycle themes &middot;
-        <kbd>Ctrl</kbd>+<kbd>P</kbd> for panel
-      </p>
-    </header>
-    <main>
-      <div class="controls">
-        <button data-type="columns">Columns</button>
-        <button data-type="baseline">Baseline</button>
-        <button data-type="square">Square</button>
-        <button data-type="dots">Dots</button>
-        <button data-type="container">Container</button>
-        <button data-type="modular">Modular</button>
-        <button data-type="golden">Golden</button>
-        <button data-type="thirds">Thirds</button>
-        <button data-type="isometric">Isometric</button>
-        <button data-type="hex">Hex</button>
-        <button data-type="polar">Polar</button>
-        <button data-type="radial">Radial</button>
-        <button data-type="responsive">Responsive</button>
-        <button id="hide">Hide</button>
-      </div>
+    <div class="container">
+      <header>
+        <h1>Gridly demo &mdash; constraint-based layout</h1>
+        <p>
+          Open the panel (bottom-left button) and watch the constraint
+          invariants hold:
+        </p>
+        <ul style="margin:8px 0 0; opacity:0.85; line-height:1.6">
+          <li><b>Margin L</b> &rarr; grid origin moves by exactly that amount.</li>
+          <li><b>Margin R</b> &rarr; only the right edge moves; origin stays put.</li>
+          <li><b>Gutter</b> &rarr; only column widths + spacing change.</li>
+          <li><b>Grid Overlay</b> (column count) &rarr; origin never moves.</li>
+        </ul>
+        <p style="margin-top:12px">
+          Toggle <b>Show constraint debug overlay</b> in the panel to see
+          viewport bounds, container bounds, the orange origin marker,
+          and a live stats panel.
+        </p>
+      </header>
 
       <div class="grid">
         <div class="card"><h3>1. Columns</h3><p>Classic 12-column grid with 24px gutters.</p></div>
@@ -102,27 +84,54 @@
         <div class="card"><h3>4. Dots</h3><p>Figma-style dot grid for free-form design.</p></div>
         <div class="card"><h3>5. Modular</h3><p>Magazine-style row + column grid.</p></div>
         <div class="card"><h3>6. Polar</h3><p>Radial grid for circular UIs and data viz.</p></div>
+        <div class="card"><h3>7. Flex</h3><p>Alignment guides for flexbox layouts.</p></div>
+        <div class="card"><h3>8. Fibonacci</h3><p>Phi-based subdivisions with spiral.</p></div>
+        <div class="card"><h3>9. Diagonal</h3><p>45-degree cross-hatch grid.</p></div>
       </div>
-    </main>
 
-    <!--
-      In a real project you would run `npm install gridly` and import.
-      This demo loads the built ESM bundle directly.
-    -->
+      <section style="margin-top:48px">
+        <h2 style="font-size:18px;margin:0 0 4px">Detector demo &mdash; <code>type: "detector"</code></h2>
+        <p style="margin:0 0 16px;opacity:0.7">
+          Switch <b>Type</b> to <code>detector</code> in the panel. The detector
+          will scan THIS PAGE and overlay all real <code>display: grid</code> /
+          <code>flex</code> containers. Try setting <b>Target</b> to
+          <code>.flex-row</code> or <code>.real-grid</code> to inspect just one.
+        </p>
+
+        <div class="flex-row" style="display:flex;gap:16px;justify-content:space-between;align-items:center;padding:16px;background:#fff;border-radius:8px;border:1px solid #eee">
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">A</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">B</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">C</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">D</div>
+        </div>
+
+        <div class="real-grid" style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:12px;padding:16px;margin-top:16px;background:#fff;border-radius:8px;border:1px solid #eee">
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">side</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">main content area</div>
+          <div style="padding:12px;background:#f4f4f5;border-radius:6px">side</div>
+        </div>
+      </section>
+    </div>
+
     <script type="module">
       import { Gridly } from "../../dist/index.js";
 
-      // Show a 12-column overlay by default
-      Gridly.show({ type: "columns", columns: 12, gutter: 24, theme: "light" });
-
-      // Wire up demo buttons
-      document.querySelectorAll("button[data-type]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const type = btn.dataset.type;
-          Gridly.show({ type });
-        });
+      // Constraint-based: containerX = leftMargin = 40 (matches the
+      // .container's padding-left). The grid extends edge-to-edge of
+      // the .container's content box.
+      Gridly.show({
+        type: "columns",
+        columns: 12,
+        gutter: 24,
+        marginLeft: 40,
+        marginRight: 40,
+        maxWidth: 0,                 // fluid — let it span full width
+        theme: "light",
+        showColumnNumbers: true,
+        showGutterNumbers: false,
+        showDebugOverlay: true,      // turn off via the panel checkbox
+        showPanel: false             // click the launcher to open
       });
-      document.getElementById("hide").addEventListener("click", () => Gridly.hide());
     </script>
   </body>
 </html>
