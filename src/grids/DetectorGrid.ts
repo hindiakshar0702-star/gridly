@@ -367,7 +367,10 @@ function drawHeaderBadge(
     }
   }
   const text = parts.join(" \u00b7 ");
-  const w = Math.min(window.innerWidth - 24, text.length * 7 + 24);
+  const viewportW = (typeof document !== "undefined")
+    ? document.documentElement.clientWidth
+    : window.innerWidth;
+  const w = Math.min(viewportW - 24, text.length * 7 + 24);
 
   host.appendChild(svg("rect", {
     x: 12, y: 12, width: w, height: 24, rx: 4,
@@ -399,7 +402,10 @@ function drawEmptyState(
     msg = `detector: no grid/flex containers on this page`;
   }
 
-  const w = Math.min(window.innerWidth - 24, msg.length * 7 + 24);
+  const viewportW = (typeof document !== "undefined")
+    ? document.documentElement.clientWidth
+    : window.innerWidth;
+  const w = Math.min(viewportW - 24, msg.length * 7 + 24);
 
   host.appendChild(svg("rect", {
     x: 12, y: 12, width: w, height: 24, rx: 4,

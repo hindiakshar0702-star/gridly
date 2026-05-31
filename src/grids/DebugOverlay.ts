@@ -128,6 +128,9 @@ export function drawDebugOverlay(
   }
 
   // ── 6. Stats panel (top-right) ─────────────────────────────────────
+  const innerW = typeof window !== "undefined" ? Math.round(window.innerWidth) : 0;
+  const clientW = typeof document !== "undefined" ? Math.round(document.documentElement.clientWidth) : 0;
+  const scrollbarGap = innerW - clientW;
   const lines = [
     `leftMargin   = ${Math.round(marginLeft)}`,
     `rightMargin  = ${Math.round(marginRight)}`,
@@ -135,10 +138,13 @@ export function drawDebugOverlay(
     `columns      = ${safeCols}`,
     `gutter       = ${gutter}`,
     ` `,
-    `containerX   = ${Math.round(containerX)}    ← = leftMargin`,
+    `containerX   = ${Math.round(containerX)}    \u2190 = leftMargin`,
     `containerW   = ${Math.round(containerWidth)}`,
     `columnWidth  = ${columnWidth.toFixed(2)}`,
-    `totalGutters = ${totalGutters}`
+    `totalGutters = ${totalGutters}`,
+    ` `,
+    `innerWidth   = ${innerW}`,
+    `clientWidth  = ${clientW}    ${scrollbarGap > 0 ? `(scrollbar ${scrollbarGap})` : ""}`
   ];
   drawStatsPanel(host, size.width - 12, 12, lines);
 }
