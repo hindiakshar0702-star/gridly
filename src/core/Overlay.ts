@@ -80,11 +80,23 @@ export class Overlay {
     applyThemeVars(this.root, this.options.theme);
     this.applyCustomColor();
 
+    // CRITICAL: preserveAspectRatio: "none"
+    //
+    // With the previous "xMidYMid slice" setting, when the SVG viewBox
+    // and the rendered SVG had even a 1-pixel aspect-ratio mismatch
+    // (which happens whenever the page has a vertical scrollbar:
+    //  window.innerWidth INCLUDES the scrollbar but
+    //  documentElement.clientWidth EXCLUDES it), the browser would
+    //  scale + center + slice the viewBox content into the rendered
+    //  rect. The visible effect was every grid line / detector rect
+    //  drifting ~8 px LEFT of the real element. Using "none" makes
+    //  the viewBox stretch to the rendered box edge-to-edge so each
+    //  SVG unit maps 1:1 to a CSS pixel — no implicit centering.
     this.surface = svg("svg", {
       class: "gridly-surface",
       width: "100%",
       height: "100%",
-      preserveAspectRatio: "xMidYMid slice"
+      preserveAspectRatio: "none"
     });
     this.root.appendChild(this.surface);
 
@@ -194,15 +206,22 @@ export class Overlay {
     if (!this.surface || !this.root) return;
     clearChildren(this.surface);
 
-    // For scoped overlays, derive size from the host element instead
-    // of the viewport.
+    // CRITICAL: use clientWidth/clientHeight (NOT window.innerWidth).
+    //
+    // window.innerWidth includes the scrollbar gutter; the SVG actually
+    // renders into the area minus the scrollbar. A mismatch here is what
+    // caused the "left side khisak raha hai" / left-shifted overlay bug —
+    // getBoundingClientRect uses the post-scrollbar viewport (= clientWidth)
+    // as origin, but we were sizing the SVG to a wider innerWidth, so the
+    // viewBox got centered+sliced by ~8px.
     const useHostSize = this.scoped && this.root.parentElement;
+    const docEl = typeof document !== "undefined" ? document.documentElement : null;
     const fullWidth = useHostSize
       ? (this.root.parentElement as HTMLElement).clientWidth
-      : window.innerWidth;
+      : (docEl?.clientWidth ?? window.innerWidth);
     const fullHeight = useHostSize
       ? (this.root.parentElement as HTMLElement).clientHeight
-      : window.innerHeight;
+      : (docEl?.clientHeight ?? window.innerHeight);
 
     if (fullWidth <= 0 || fullHeight <= 0) return;
 
