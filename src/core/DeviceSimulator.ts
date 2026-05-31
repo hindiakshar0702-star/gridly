@@ -43,20 +43,26 @@ export const DEVICE_CLIP_ID = "gridly-device-clip";
  *
  * Returns the clip-path URL string to apply on the grid <g>, or
  * empty string when sim is inactive.
+ *
+ * The optional `clipId` parameter lets multiple Overlay instances
+ * use distinct ids on the same page (e.g. global Gridly overlay +
+ * a `<GridBackground />` mounted in a React component). If omitted,
+ * falls back to the legacy shared `DEVICE_CLIP_ID`.
  */
 export function installDeviceClip(
   surface: SVGSVGElement,
-  sim: SimulationResult
+  sim: SimulationResult,
+  clipId: string = DEVICE_CLIP_ID
 ): string {
   if (!sim.active) return "";
   const defs = svg("defs");
-  const clip = svg("clipPath", { id: DEVICE_CLIP_ID });
+  const clip = svg("clipPath", { id: clipId });
   clip.appendChild(svg("rect", {
     x: 0, y: 0, width: sim.width, height: sim.height
   }));
   defs.appendChild(clip);
   surface.appendChild(defs);
-  return `url(#${DEVICE_CLIP_ID})`;
+  return `url(#${clipId})`;
 }
 
 /**

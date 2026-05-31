@@ -107,17 +107,22 @@ class GridlyClass {
   /**
    * Inspect a specific element (or selector) using the grid detector.
    * Switches to `type: "detector"` and sets `detectorTarget` to the
-   * provided selector(s).
+   * provided selector(s). Auto-mounts the overlay if it isn't already.
    *
    *   Gridly.inspect(".container");
    *   Gridly.inspect(".hero, .grid-section");
    */
   inspect(selector: string): void {
-    this.update({
+    const opts: GridlyOptions = {
       type: "detector",
       detectorTarget: selector,
       detectorAutoScan: false
-    });
+    };
+    if (this.isVisible()) {
+      this.update(opts);
+    } else {
+      this.show(opts);
+    }
   }
 
   /**
@@ -126,11 +131,16 @@ class GridlyClass {
    * detectorAutoScan: true, detectorTarget: "" })`.
    */
   inspectAll(): void {
-    this.update({
+    const opts: GridlyOptions = {
       type: "detector",
       detectorTarget: "",
       detectorAutoScan: true
-    });
+    };
+    if (this.isVisible()) {
+      this.update(opts);
+    } else {
+      this.show(opts);
+    }
   }
 
   cycleType(direction: 1 | -1 = 1): GridType {

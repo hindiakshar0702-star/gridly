@@ -163,8 +163,13 @@ export function drawColumns(
   } = options;
 
   const { startX, contentWidth } = computeBox(options, size.width);
-  const totalGutters = gutter * Math.max(0, columnCount - 1);
-  const columnWidth = (contentWidth - totalGutters) / columnCount;
+  const safeColumnCount = Math.max(1, columnCount);
+  const totalGutters = gutter * Math.max(0, safeColumnCount - 1);
+  const columnWidth = Math.max(0, (contentWidth - totalGutters) / safeColumnCount);
+
+  // Skip drawing entirely if the content box would be invalid (e.g.
+  // marginLeft + marginRight > viewport).
+  if (contentWidth <= 0 || columnWidth <= 0) return;
 
   // --- Margin fills (left + right) ------------------------------------
   if (startX > 0) {
@@ -183,7 +188,7 @@ export function drawColumns(
   }
 
   // --- Column blocks ---------------------------------------------------
-  for (let i = 0; i < columnCount; i++) {
+  for (let i = 0; i < safeColumnCount; i++) {
     const x = startX + i * (columnWidth + gutter);
     host.appendChild(svg("rect", {
       x, y: 0, width: columnWidth, height: size.height,
@@ -210,7 +215,7 @@ export function drawColumns(
 
   // --- Gutter blocks (visualized between columns) ----------------------
   if (gutter > 0) {
-    for (let i = 0; i < columnCount - 1; i++) {
+    for (let i = 0; i < safeColumnCount - 1; i++) {
       const x = startX + i * (columnWidth + gutter) + columnWidth;
       // Subtle striped pattern marker for the gutter region
       host.appendChild(svg("rect", {

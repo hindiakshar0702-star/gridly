@@ -54,6 +54,24 @@ export const DEFAULTS: ResolvedOptions = {
 };
 
 /**
+ * Strip `undefined` properties so they don't overwrite defaults
+ * via the spread operator.
+ *
+ *   { ...DEFAULTS, ...{ columns: undefined } }  // columns becomes undefined
+ *
+ * vs after filtering:
+ *
+ *   { ...DEFAULTS, ...filterUndefined({ columns: undefined }) }  // columns stays 12
+ */
+function filterUndefined<T extends object>(input: T): Partial<T> {
+  const out: Partial<T> = {};
+  for (const key of Object.keys(input) as Array<keyof T>) {
+    if (input[key] !== undefined) out[key] = input[key];
+  }
+  return out;
+}
+
+/**
  * Merge user-supplied options over the defaults.
  *
  * Implements the margin-fallback rule:
@@ -62,21 +80,30 @@ export const DEFAULTS: ResolvedOptions = {
  *
  * Also propagates the legacy `showNumbers` flag to the new
  * `showColumnNumbers` flag when the new flag isn't explicitly set.
+ *
+ * `undefined` values in `input` are filtered out before merging
+ * so they don't overwrite the defaults.
  */
 export function mergeOptions(input: GridlyOptions = {}): ResolvedOptions {
-  const margin = input.margin ?? DEFAULTS.margin;
-  const marginLeft = input.marginLeft ?? input.margin ?? DEFAULTS.marginLeft;
-  const marginRight = input.marginRight ?? input.margin ?? DEFAULTS.marginRight;
+  const filtered = filterUndefined(input);
+
+  const margin = filtered.margin ?? DEFAULTS.margin;
+  const marginLeft = filtered.marginLeft ?? filtered.margin ?? DEFAULTS.marginLeft;
+  const marginRight = filtered.marginRight ?? filtered.margin ?? DEFAULTS.marginRight;
 
   const showColumnNumbers =
-    input.showColumnNumbers ?? input.showNumbers ?? DEFAULTS.showColumnNumbers;
+    filtered.showColumnNumbers ?? filtered.showNumbers ?? DEFAULTS.showColumnNumbers;
+
+  const breakpoints = (filtered.breakpoints && filtered.breakpoints.length > 0)
+    ? filtered.breakpoints
+    : DEFAULT_BREAKPOINTS;
 
   return {
     ...DEFAULTS,
-    ...input,
-    color: input.color ?? null,
-    breakpoints: input.breakpoints ?? DEFAULT_BREAKPOINTS,
-    maxWidth: input.maxWidth ?? 0,
+    ...filtered,
+    color: filtered.color ?? null,
+    breakpoints,
+    maxWidth: filtered.maxWidth ?? 0,
     margin,
     marginLeft,
     marginRight,
@@ -84,11 +111,19 @@ export function mergeOptions(input: GridlyOptions = {}): ResolvedOptions {
   };
 }
 
+/**
+ * Pick the active breakpoint for a given viewport width.
+ * Falls back to the first DEFAULT_BREAKPOINTS entry if `breakpoints`
+ * is empty (which would otherwise crash callers).
+ */
 export function pickBreakpoint(
   width: number,
   breakpoints: Breakpoint[]
 ): Breakpoint {
-  const sorted = [...breakpoints].sort((a, b) => a.minWidth - b.minWidth);
+  const list = (breakpoints && breakpoints.length > 0)
+    ? breakpoints
+    : DEFAULT_BREAKPOINTS;
+  const sorted = [...list].sort((a, b) => a.minWidth - b.minWidth);
   let match = sorted[0];
   for (const bp of sorted) {
     if (width >= bp.minWidth) match = bp;

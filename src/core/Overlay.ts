@@ -19,6 +19,9 @@ export interface OverlayMountOptions {
   host?: HTMLElement;
 }
 
+/** Monotonic counter for unique SVG clip-path ids per Overlay instance. */
+let overlayInstanceCounter = 0;
+
 /**
  * Overlay is the host element that contains the SVG canvas where
  * grid renderers draw.
@@ -39,13 +42,19 @@ export class Overlay {
   private scoped: boolean;
   private resizeObserver: ResizeObserver | null = null;
   private onResize: () => void;
+  private onScroll: () => void;
+  private clipId: string;
 
   constructor(options: GridlyOptions = {}, mountOpts: OverlayMountOptions = {}) {
     this.options = mergeOptions(options);
     this.onResize = rafThrottle(() => this.draw());
+    this.onScroll = rafThrottle(() => this.draw());
     this.host = mountOpts.host ?? null;
     // If a custom host is provided we treat the overlay as scoped.
     this.scoped = mountOpts.host != null && mountOpts.host !== globalBody();
+    // Unique clip id per instance so multiple overlays on the same
+    // page don't collide on `<clipPath id="...">`.
+    this.clipId = `gridly-clip-${++overlayInstanceCounter}`;
   }
 
   mount(): void {
@@ -93,10 +102,14 @@ export class Overlay {
       this.resizeObserver.observe(this.scoped ? targetHost : document.documentElement);
     }
     window.addEventListener("resize", this.onResize, { passive: true });
+    // Detector reads real DOM positions — those become stale on scroll.
+    // Cheap rafThrottle keeps the cost to one redraw per frame.
+    window.addEventListener("scroll", this.onScroll, { passive: true });
   }
 
   unmount(): void {
     window.removeEventListener("resize", this.onResize);
+    window.removeEventListener("scroll", this.onScroll);
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
@@ -190,6 +203,8 @@ export class Overlay {
       ? (this.root.parentElement as HTMLElement).clientHeight
       : window.innerHeight;
 
+    if (fullWidth <= 0 || fullHeight <= 0) return;
+
     this.surface.setAttribute("viewBox", `0 0 ${fullWidth} ${fullHeight}`);
     this.surface.setAttribute("width", String(fullWidth));
     this.surface.setAttribute("height", String(fullHeight));
@@ -210,8 +225,9 @@ export class Overlay {
 
     // 2. The grid itself, translated into the simulated viewport
     //    and clipped so over-drawn cells (hex/dots/etc.) don't leak
-    //    into the letterbox area.
-    const clipPath = installDeviceClip(this.surface, sim);
+    //    into the letterbox area. Use a per-instance clip id so
+    //    multiple overlays don't fight over the same <defs> entry.
+    const clipPath = installDeviceClip(this.surface, sim, this.clipId);
     const gridAttrs: Record<string, string> = {
       transform: sim.active ? `translate(${sim.offsetX}, 0)` : ""
     };

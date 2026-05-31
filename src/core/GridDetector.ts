@@ -71,9 +71,13 @@ export interface DetectedGrid {
 /**
  * Inspect a single element. Returns null if the element doesn't
  * use grid or flex layout, or if the element is not in the document.
+ *
+ * Skips Gridly's own UI elements (overlay, panel, launcher) so the
+ * detector doesn't recursively detect itself.
  */
 export function detectGrid(el: HTMLElement): DetectedGrid | null {
   if (typeof window === "undefined" || !el.isConnected) return null;
+  if (isGridlyUI(el)) return null;
 
   const styles = window.getComputedStyle(el);
   const display = styles.display as DetectedDisplay;
@@ -196,6 +200,15 @@ export function getElementSelector(el: HTMLElement): string {
 }
 
 // ─── Internal helpers ────────────────────────────────────────────────
+
+/**
+ * True when the element is part of Gridly's own UI (overlay surface,
+ * floating panel, or launcher button). Used to avoid the detector
+ * recursively reporting its own host elements.
+ */
+function isGridlyUI(el: Element): boolean {
+  return el.closest(".gridly-overlay, .gridly-panel, .gridly-launcher") !== null;
+}
 
 /**
  * Parse a computed `grid-template-columns` / `rows` value into pixel sizes.

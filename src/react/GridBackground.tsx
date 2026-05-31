@@ -21,6 +21,10 @@ export interface GridBackgroundProps extends GridlyOptions {
  *   <GridBackground type="dots" spacing={20} style={{ height: 320 }}>
  *     <Hero />
  *   </GridBackground>
+ *
+ * On prop changes the existing overlay is updated in-place
+ * (no full unmount/remount), so the user keeps focus and the
+ * SVG canvas isn't recreated.
  */
 export function GridBackground(props: GridBackgroundProps): JSX.Element {
   const { style, className, children, ...options } = props;
@@ -28,12 +32,12 @@ export function GridBackground(props: GridBackgroundProps): JSX.Element {
   const overlayRef = useRef<Overlay | null>(null);
   const signature = JSON.stringify(options);
 
+  // Mount the scoped overlay once. Subsequent prop changes are
+  // pushed via overlay.update() in the second effect.
   useEffect(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
-    // Create a fully-scoped overlay that mounts directly inside the
-    // wrapper (not document.body) and skips the global panel/launcher.
     // Force showLauncher/showPanel off — they're for the global overlay.
     const scopedOptions: GridlyOptions = {
       ...options,
@@ -50,10 +54,9 @@ export function GridBackground(props: GridBackgroundProps): JSX.Element {
       overlayRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature]);
+  }, []);
 
-  // If the props change while mounted, push them to the existing overlay
-  // (cheaper than fully unmounting / remounting).
+  // Push prop changes into the existing overlay.
   useEffect(() => {
     if (overlayRef.current) {
       overlayRef.current.update({
