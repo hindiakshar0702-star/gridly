@@ -62,9 +62,15 @@ export class ControlPanel {
     body.appendChild(this.row("Theme", this.makeSelect(
       "theme", THEMES, opts.theme, (v) => Gridly.setTheme(v as ThemeName)
     )));
-    body.appendChild(this.row("Device", this.makeSelect(
-      "device", DEVICE_LIST, opts.device, (v) => Gridly.update({ device: v as DevicePreset })
-    )));
+    // Device sim doesn't apply to detector (which uses real DOM coords),
+    // so hide it for that type.
+    body.appendChild(this.typedRow(
+      TYPES.filter((t) => t !== "detector"),
+      "Device",
+      this.makeSelect(
+        "device", DEVICE_LIST, opts.device, (v) => Gridly.update({ device: v as DevicePreset })
+      )
+    ));
 
     // LAYOUT section --------------------------------------------------
     body.appendChild(this.typedSection("Layout", "all"));

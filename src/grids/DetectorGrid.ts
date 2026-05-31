@@ -10,9 +10,9 @@ import {
 /**
  * Detector grid: scans the page for `display: grid` / `flex`
  * containers and overlays their actual track lines, gaps,
- * and child item bounds.
+ * padding, and child item bounds.
  *
- * Drives off three options:
+ * Drives off four options:
  *   - detectorTarget       (selector string; comma-separated OK)
  *   - detectorAutoScan     (when target is empty, scan whole document)
  *   - detectorShowLabels   (label badges on each detection)
@@ -25,35 +25,103 @@ import {
 export const renderDetectorGrid: GridRenderer = (host, options, _size) => {
   if (typeof window === "undefined") return;
 
-  const grids = collectGrids(options);
+  // Always install the diagonal-stripe pattern used for gap fills.
+  installPatterns(host);
+
+  const collectResult = collectGrids(options);
+  const { grids, summary } = collectResult;
+
   if (grids.length === 0) {
-    drawEmptyState(host, options);
+    drawEmptyState(host, options, summary);
     return;
   }
 
-  for (const g of grids) {
+  // Sort by area descending so larger containers draw first and
+  // smaller ones (which usually nest inside) stay on top + visible.
+  const sorted = [...grids].sort((a, b) =>
+    (b.rect.width * b.rect.height) - (a.rect.width * a.rect.height)
+  );
+
+  for (const g of sorted) {
     drawDetectedGrid(host, g, options);
   }
 
-  drawHeaderBadge(host, grids.length);
+  drawHeaderBadge(host, grids.length, summary);
 };
 
-function collectGrids(options: ResolvedOptions): DetectedGrid[] {
+interface CollectResult {
+  grids: DetectedGrid[];
+  summary: {
+    targetMatched: number;     // # elements selector matched
+    targetIneligible: number;  // # of those that weren't grid/flex
+    autoScanned: boolean;
+  };
+}
+
+function collectGrids(options: ResolvedOptions): CollectResult {
   const target = (options.detectorTarget ?? "").trim();
+  const summary = { targetMatched: 0, targetIneligible: 0, autoScanned: false };
+
   if (target) {
     const els = resolveTargets(target);
+    summary.targetMatched = els.length;
     const out: DetectedGrid[] = [];
     for (const el of els) {
       const d = detectGrid(el);
       if (d) out.push(d);
+      else summary.targetIneligible++;
     }
-    return out;
+    return { grids: out, summary };
   }
+
   if (options.detectorAutoScan) {
-    return detectAllGrids();
+    summary.autoScanned = true;
+    return { grids: detectAllGrids(), summary };
   }
-  return [];
+
+  return { grids: [], summary };
 }
+
+// ─── SVG patterns (defs) ────────────────────────────────────────────
+
+const PATTERN_ID = "gridly-detector-stripe";
+
+/**
+ * Install a reusable diagonal-stripe <pattern> in <defs> for gap fills.
+ * Theme-independent visibility so gaps are obvious in light + dark.
+ *
+ * Re-runs on every draw because Overlay.clearChildren wipes <defs>;
+ * the early-return guard makes this a no-op when already present.
+ */
+function installPatterns(host: SVGElement): void {
+  // host is always the root <svg> in the detector branch (Overlay.draw
+  // passes this.surface directly, not a translated <g>).
+  const surface = host as SVGSVGElement;
+
+  if (surface.querySelector(`#${PATTERN_ID}`)) return;
+
+  const defs = svg("defs");
+  const pattern = svg("pattern", {
+    id: PATTERN_ID,
+    patternUnits: "userSpaceOnUse",
+    width: 8,
+    height: 8,
+    patternTransform: "rotate(45)"
+  });
+  pattern.appendChild(svg("rect", {
+    x: 0, y: 0, width: 8, height: 8,
+    fill: "transparent"
+  }));
+  pattern.appendChild(svg("line", {
+    x1: 0, y1: 0, x2: 0, y2: 8,
+    stroke: "var(--gridly-ink-bold, rgba(220,38,38,0.45))",
+    "stroke-width": 3
+  }));
+  defs.appendChild(pattern);
+  surface.insertBefore(defs, surface.firstChild);
+}
+
+// ─── Per-grid rendering ─────────────────────────────────────────────
 
 function drawDetectedGrid(
   host: SVGElement,
@@ -61,19 +129,26 @@ function drawDetectedGrid(
   options: ResolvedOptions
 ): void {
   const { rect } = g;
+  const isFlex = g.display === "flex" || g.display === "inline-flex";
 
-  // 1. Container bounding box (accent color)
+  // 1. Tinted background fill of the container so it stands out
   host.appendChild(svg("rect", {
-    x: rect.x,
-    y: rect.y,
-    width: rect.width,
-    height: rect.height,
-    fill: "none",
-    class: "gridly-line--accent",
-    "stroke-width": 1.5
+    x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+    fill: isFlex
+      ? "var(--gridly-ink, rgba(220,38,38,0.08))"
+      : "var(--gridly-ink, rgba(220,38,38,0.10))",
+    opacity: 0.45
   }));
 
-  // 2. Padding inset (dashed line)
+  // 2. Bold container outline
+  host.appendChild(svg("rect", {
+    x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+    fill: "none",
+    stroke: "var(--gridly-accent, rgba(220,38,38,0.85))",
+    "stroke-width": 2
+  }));
+
+  // 3. Padding inset (solid line, more visible than dashed)
   if (g.padding.left || g.padding.top || g.padding.right || g.padding.bottom) {
     host.appendChild(svg("rect", {
       x: rect.x + g.padding.left,
@@ -81,8 +156,10 @@ function drawDetectedGrid(
       width:  Math.max(0, rect.width  - g.padding.left - g.padding.right),
       height: Math.max(0, rect.height - g.padding.top  - g.padding.bottom),
       fill: "none",
-      class: "gridly-line",
-      "stroke-dasharray": "4 4"
+      stroke: "var(--gridly-ink-bold, rgba(220,38,38,0.45))",
+      "stroke-width": 1,
+      "stroke-dasharray": "5 5",
+      opacity: 0.85
     }));
   }
 
@@ -92,23 +169,22 @@ function drawDetectedGrid(
     drawFlexAxes(host, g);
   }
 
-  // 3. Item bounds
+  // 4. Item bounds
   if (options.detectorShowItems) {
     for (const item of g.items) {
       host.appendChild(svg("rect", {
-        x: item.rect.x,
-        y: item.rect.y,
-        width: item.width,
-        height: item.height,
-        fill: "var(--gridly-ink, rgba(220,38,38,0.08))",
-        stroke: "var(--gridly-ink-bold)",
-        "stroke-width": 0.75,
-        "stroke-dasharray": "2 3"
+        x: item.rect.x, y: item.rect.y,
+        width: item.width, height: item.height,
+        fill: "none",
+        stroke: "var(--gridly-accent, rgba(220,38,38,0.85))",
+        "stroke-width": 1.25,
+        "stroke-dasharray": "3 3",
+        opacity: 0.7
       }));
     }
   }
 
-  // 4. Label badge
+  // 5. Label badge
   if (options.detectorShowLabels) {
     drawLabelBadge(host, g);
   }
@@ -117,56 +193,63 @@ function drawDetectedGrid(
 function drawGridTracks(host: SVGElement, g: DetectedGrid): void {
   const { rect, colSizes = [], rowSizes = [], colGap, rowGap, padding } = g;
 
-  const innerLeft   = rect.x + padding.left;
-  const innerTop    = rect.y + padding.top;
-  const innerRight  = rect.x + rect.width  - padding.right;
+  const innerLeft = rect.x + padding.left;
+  const innerTop  = rect.y + padding.top;
+  const innerRight = rect.x + rect.width - padding.right;
   const innerBottom = rect.y + rect.height - padding.bottom;
 
-  // Vertical lines between columns
+  // --- Vertical: outline each column + stripe gaps ---
   let cursorX = innerLeft;
   for (let i = 0; i < colSizes.length; i++) {
     const w = colSizes[i];
-    if (i > 0) {
-      // Gap fill rect (subtle)
-      if (colGap > 0) {
-        host.appendChild(svg("rect", {
-          x: cursorX - colGap,
-          y: innerTop,
-          width: colGap,
-          height: innerBottom - innerTop,
-          fill: "var(--gridly-ink-bold)",
-          opacity: 0.18
-        }));
-      }
-      // Track-start line
-      host.appendChild(svg("line", {
-        x1: cursorX, y1: innerTop, x2: cursorX, y2: innerBottom,
-        class: "gridly-line--bold"
+    if (w <= 0) continue;
+
+    // Column outline (subtle)
+    host.appendChild(svg("rect", {
+      x: cursorX, y: innerTop, width: w, height: innerBottom - innerTop,
+      fill: "none",
+      stroke: "var(--gridly-ink-bold, rgba(220,38,38,0.45))",
+      "stroke-width": 1
+    }));
+
+    // Gap fill (diagonal stripe pattern) between this and previous col
+    if (i > 0 && colGap > 0) {
+      host.appendChild(svg("rect", {
+        x: cursorX - colGap,
+        y: innerTop,
+        width: colGap,
+        height: innerBottom - innerTop,
+        fill: `url(#${PATTERN_ID})`,
+        opacity: 0.55
       }));
     }
+
     cursorX += w + (i < colSizes.length - 1 ? colGap : 0);
   }
 
-  // Horizontal lines between rows
+  // --- Horizontal: outline each row + stripe row gaps ---
   let cursorY = innerTop;
   for (let i = 0; i < rowSizes.length; i++) {
     const h = rowSizes[i];
-    if (i > 0) {
-      if (rowGap > 0) {
-        host.appendChild(svg("rect", {
-          x: innerLeft,
-          y: cursorY - rowGap,
-          width: innerRight - innerLeft,
-          height: rowGap,
-          fill: "var(--gridly-ink-bold)",
-          opacity: 0.18
-        }));
-      }
-      host.appendChild(svg("line", {
-        x1: innerLeft, y1: cursorY, x2: innerRight, y2: cursorY,
-        class: "gridly-line--bold"
+    if (h <= 0) continue;
+
+    host.appendChild(svg("rect", {
+      x: innerLeft, y: cursorY,
+      width: innerRight - innerLeft, height: h,
+      fill: "none",
+      stroke: "var(--gridly-ink-bold, rgba(220,38,38,0.45))",
+      "stroke-width": 1
+    }));
+
+    if (i > 0 && rowGap > 0) {
+      host.appendChild(svg("rect", {
+        x: innerLeft, y: cursorY - rowGap,
+        width: innerRight - innerLeft, height: rowGap,
+        fill: `url(#${PATTERN_ID})`,
+        opacity: 0.55
       }));
     }
+
     cursorY += h + (i < rowSizes.length - 1 ? rowGap : 0);
   }
 }
@@ -178,22 +261,24 @@ function drawFlexAxes(host: SVGElement, g: DetectedGrid): void {
 
   const isRow = !flexDirection || /^row/.test(flexDirection);
 
-  // Main axis
+  // Main axis arrow line
   if (isRow) {
     host.appendChild(svg("line", {
-      x1: rect.x + padding.left,
-      x2: rect.x + rect.width - padding.right,
+      x1: rect.x + padding.left + 6,
+      x2: rect.x + rect.width - padding.right - 6,
       y1: cy, y2: cy,
-      class: "gridly-line--bold",
-      "stroke-dasharray": "6 4"
+      stroke: "var(--gridly-accent, rgba(220,38,38,0.85))",
+      "stroke-width": 1.5,
+      "stroke-dasharray": "8 4"
     }));
   } else {
     host.appendChild(svg("line", {
-      y1: rect.y + padding.top,
-      y2: rect.y + rect.height - padding.bottom,
+      y1: rect.y + padding.top + 6,
+      y2: rect.y + rect.height - padding.bottom - 6,
       x1: cx, x2: cx,
-      class: "gridly-line--bold",
-      "stroke-dasharray": "6 4"
+      stroke: "var(--gridly-accent, rgba(220,38,38,0.85))",
+      "stroke-width": 1.5,
+      "stroke-dasharray": "8 4"
     }));
   }
 
@@ -201,81 +286,130 @@ function drawFlexAxes(host: SVGElement, g: DetectedGrid): void {
   if (isRow) {
     host.appendChild(svg("line", {
       x1: cx, x2: cx,
-      y1: rect.y + padding.top,
-      y2: rect.y + rect.height - padding.bottom,
-      class: "gridly-line",
-      "stroke-dasharray": "2 6"
+      y1: rect.y + padding.top + 6,
+      y2: rect.y + rect.height - padding.bottom - 6,
+      stroke: "var(--gridly-ink-bold, rgba(220,38,38,0.45))",
+      "stroke-width": 1,
+      "stroke-dasharray": "3 6"
     }));
   } else {
     host.appendChild(svg("line", {
       y1: cy, y2: cy,
-      x1: rect.x + padding.left,
-      x2: rect.x + rect.width - padding.right,
-      class: "gridly-line",
-      "stroke-dasharray": "2 6"
+      x1: rect.x + padding.left + 6,
+      x2: rect.x + rect.width - padding.right - 6,
+      stroke: "var(--gridly-ink-bold, rgba(220,38,38,0.45))",
+      "stroke-width": 1,
+      "stroke-dasharray": "3 6"
     }));
   }
 }
 
+// ─── Labels ─────────────────────────────────────────────────────────
+
 function drawLabelBadge(host: SVGElement, g: DetectedGrid): void {
   const text = formatLabel(g);
-  const x = g.rect.x + 4;
-  const y = g.rect.y + 4;
+  const charW = 6.6;
+  const padX = 8;
+  const measured = text.length * charW + padX * 2;
+  const labelWidth = Math.min(measured, Math.max(80, g.rect.width - 4));
 
-  // Approximate text width (monospace 11px ≈ 6.5 px per char) + padding
-  const labelWidth = Math.min(
-    Math.max(60, text.length * 6.6 + 12),
-    Math.max(40, g.rect.width - 8)
-  );
+  // Try to position the badge ABOVE the container (so it doesn't
+  // cover the content). Fall back to the inside-top-left when there's
+  // no room above (e.g., grid is at the very top of the viewport).
+  let x = g.rect.x;
+  let y = g.rect.y - 22;
+  if (y < 4) {
+    y = g.rect.y + 4;
+    x = g.rect.x + 4;
+  }
 
   host.appendChild(svg("rect", {
-    x, y, width: labelWidth, height: 18, rx: 3,
+    x, y, width: labelWidth, height: 20, rx: 3,
     fill: "var(--gridly-accent, rgba(220,38,38,0.85))"
   }));
   host.appendChild(svg("text", {
-    x: x + 6, y: y + 13,
+    x: x + padX, y: y + 14,
     fill: "#fff",
     "font-family": "ui-monospace, Menlo, Consolas, monospace",
     "font-size": 10,
-    "font-weight": 600
+    "font-weight": 700
   }, [text]));
 }
 
 function formatLabel(g: DetectedGrid): string {
+  const sel = truncate(g.selector, 28);
   if (g.display === "grid" || g.display === "inline-grid") {
-    return `GRID  ${g.columns ?? 0}\u00d7${g.rows ?? 0}  gap ${g.colGap}/${g.rowGap}`;
+    return `GRID  ${g.columns ?? 0}\u00d7${g.rows ?? 0}  gap ${g.colGap}/${g.rowGap}  ${sel}`;
   }
   const dir = (g.flexDirection ?? "row").replace("-reverse", "\u00ab");
   const justify = (g.justifyContent ?? "normal").replace(/^space-/, "s-");
-  return `FLEX  ${dir}  ${justify}  gap ${g.colGap || g.rowGap}`;
+  return `FLEX  ${dir}  ${justify}  gap ${g.colGap || g.rowGap}  ${sel}`;
 }
 
-function drawHeaderBadge(host: SVGElement, count: number): void {
+function truncate(s: string, max: number): string {
+  if (s.length <= max) return s;
+  return s.slice(0, max - 1) + "\u2026";
+}
+
+// ─── Header / empty state ───────────────────────────────────────────
+
+function drawHeaderBadge(
+  host: SVGElement,
+  count: number,
+  summary: CollectResult["summary"]
+): void {
+  const parts: string[] = [`detector \u00b7 ${count} grid${count === 1 ? "" : "s"}`];
+  if (summary.autoScanned) parts.push("auto-scan");
+  if (summary.targetMatched > 0) {
+    parts.push(`target matched ${summary.targetMatched}`);
+    if (summary.targetIneligible > 0) {
+      parts.push(`${summary.targetIneligible} not grid/flex`);
+    }
+  }
+  const text = parts.join(" \u00b7 ");
+  const w = Math.min(window.innerWidth - 24, text.length * 7 + 24);
+
   host.appendChild(svg("rect", {
-    x: 12, y: 12, width: 220, height: 22, rx: 4,
-    class: "gridly-fill--bold"
+    x: 12, y: 12, width: w, height: 24, rx: 4,
+    fill: "rgba(20,20,24,0.92)"
   }));
   host.appendChild(svg("text", {
-    x: 18, y: 28,
-    class: "gridly-label",
-    style: "fill:#fff;font-weight:700"
-  }, [`detector \u00b7 ${count} grid${count === 1 ? "" : "s"} found`]));
+    x: 22, y: 28,
+    fill: "#f4f4f5",
+    "font-family": "ui-monospace, Menlo, Consolas, monospace",
+    "font-size": 11,
+    "font-weight": 700
+  }, [text]));
 }
 
-function drawEmptyState(host: SVGElement, options: ResolvedOptions): void {
-  const w = window.innerWidth;
+function drawEmptyState(
+  host: SVGElement,
+  options: ResolvedOptions,
+  summary: CollectResult["summary"]
+): void {
   const target = (options.detectorTarget ?? "").trim();
-  const msg = target
-    ? `detector: no element matched "${target}"`
-    : `detector: scan disabled (set a target or enable Auto-scan)`;
+  let msg: string;
+  if (target && summary.targetMatched > 0 && summary.targetIneligible > 0) {
+    msg = `detector: "${target}" matched ${summary.targetMatched} element(s), but none use display: grid or flex`;
+  } else if (target) {
+    msg = `detector: no element matched "${target}"`;
+  } else if (!options.detectorAutoScan) {
+    msg = `detector: scan disabled - set a Target or enable Auto-scan`;
+  } else {
+    msg = `detector: no grid/flex containers on this page`;
+  }
+
+  const w = Math.min(window.innerWidth - 24, msg.length * 7 + 24);
 
   host.appendChild(svg("rect", {
-    x: 12, y: 12, width: Math.min(w - 24, msg.length * 7 + 16), height: 22, rx: 4,
-    class: "gridly-fill--bold"
+    x: 12, y: 12, width: w, height: 24, rx: 4,
+    fill: "rgba(20,20,24,0.92)"
   }));
   host.appendChild(svg("text", {
-    x: 18, y: 28,
-    class: "gridly-label",
-    style: "fill:#fff;font-weight:600"
+    x: 22, y: 28,
+    fill: "#f4f4f5",
+    "font-family": "ui-monospace, Menlo, Consolas, monospace",
+    "font-size": 11,
+    "font-weight": 600
   }, [msg]));
 }
